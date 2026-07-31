@@ -13,12 +13,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1 });
 
   useEffect(() => {
+    let parsedProfile: any = null;
     const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
     if (savedProfileStr) {
-      const parsedProfile = JSON.parse(savedProfileStr) as LearnerProfile;
+      parsedProfile = JSON.parse(savedProfileStr);
+    } else {
+      const identityStr = localStorage.getItem("skilliopath_profile_identity");
+      if (identityStr) {
+        parsedProfile = JSON.parse(identityStr);
+      }
+    }
+
+    if (parsedProfile && parsedProfile.id) {
       setProfile(parsedProfile);
-      
-      supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id).single().then(({data}) => {
+      supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id as string).single().then(({data}) => {
          if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
       });
     } else {

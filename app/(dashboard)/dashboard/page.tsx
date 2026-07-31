@@ -18,9 +18,18 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
+    let parsedProfile: any = null;
     const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
     if (savedProfileStr) {
-      const parsedProfile = JSON.parse(savedProfileStr) as LearnerProfile;
+      parsedProfile = JSON.parse(savedProfileStr);
+    } else {
+      const identityStr = localStorage.getItem("skilliopath_profile_identity");
+      if (identityStr) {
+        parsedProfile = JSON.parse(identityStr);
+      }
+    }
+
+    if (parsedProfile) {
       setProfile(parsedProfile);
       
       const savedCurriculumStr = sessionStorage.getItem("skilliopath_curriculum");
@@ -49,8 +58,9 @@ export default function DashboardPage() {
       });
     } else {
       setIsLoading(false);
+      router.push('/onboarding');
     }
-  }, []);
+  }, [router]);
 
   if (isLoading) {
     return <div className="p-8 flex justify-center"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/50"></div></div>;
@@ -75,14 +85,19 @@ export default function DashboardPage() {
       setLearningPaths(prev => prev.filter(p => p.id !== deleteModalPath.id));
       
       // If we deleted the active path, clear it from session storage
-      const savedCurriculumStr = sessionStorage.getItem("skilliopath_curriculum");
-      if (savedCurriculumStr) {
-         const mods = JSON.parse(savedCurriculumStr);
-         if (mods.length > 0 && mods[0].path_id === deleteModalPath.id) {
+      const profileStr = sessionStorage.getItem("skilliopath_profile");
+      if (profileStr) {
+         const profile = JSON.parse(profileStr);
+         // The active profile might have pathId set from diagnostic
+         if (profile.pathId === deleteModalPath.id || profile.skillToLearn === deleteModalPath.skill_to_learn) {
              sessionStorage.removeItem("skilliopath_curriculum");
+             // Also optionally remove the profile so the app knows there's no active path
+             sessionStorage.removeItem("skilliopath_profile");
              setModules([]);
+             setProfile(null as any); // We'll let the user see an empty state or we can redirect
          }
       }
+
       setDeleteModalPath(null);
       setDeleteConfirmText("");
     } catch (error) {

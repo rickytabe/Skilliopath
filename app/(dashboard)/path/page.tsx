@@ -20,7 +20,12 @@ export default function PathPage() {
       try {
         const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
         if (!savedProfileStr) {
-          router.push("/onboarding");
+          const hasIdentity = localStorage.getItem("skilliopath_profile_identity");
+          if (hasIdentity) {
+            router.push("/dashboard");
+          } else {
+            router.push("/onboarding");
+          }
           return;
         }
         const parsedProfile = JSON.parse(savedProfileStr) as LearnerProfile;
@@ -63,11 +68,11 @@ export default function PathPage() {
   }, [router]);
 
   useEffect(() => {
-    if (profile) {
-      supabase.from('profiles').select('total_xp, current_level').eq('id', profile.id).single().then(({data}) => {
+    if (profile && profile.id) {
+      supabase.from('profiles').select('total_xp, current_level').eq('id', profile.id as string).single().then(({data}) => {
          if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
       });
-      supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id).then(({data}) => {
+      supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id as string).then(({data}) => {
          if (data) {
            setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id]: p.stars_earned || 0 }), {} as Record<string, number>));
          }
