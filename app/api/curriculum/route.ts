@@ -13,6 +13,25 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if curriculum already exists in the database
+    const { data: existingModules, error: existingError } = await supabase
+      .from('curriculum_modules')
+      .select('*')
+      .eq('path_id', profile.pathId)
+      .order('order_index', { ascending: true });
+
+    if (!existingError && existingModules && existingModules.length > 0) {
+      const dbCurriculum = existingModules.map((dbM) => ({
+        id: dbM.id,
+        title: dbM.title,
+        angle: dbM.angle,
+        timingLabel: dbM.timing_label,
+        order: dbM.order_index,
+        status: dbM.status
+      }));
+      return NextResponse.json(dbCurriculum);
+    }
+
     const curriculum = await generateCurriculum(profile);
 
     const { data: dbModules, error } = await supabase

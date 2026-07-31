@@ -70,7 +70,7 @@ export default function OnboardingPage() {
         finalName = newProfile.name;
         finalCareer = newProfile.current_career;
 
-        const identity = { id: profileId, name: finalName, current_career: finalCareer };
+        const identity = { id: profileId as string, name: finalName, current_career: finalCareer };
         localStorage.setItem("skilliopath_profile_identity", JSON.stringify(identity));
         setSavedProfile(identity);
       }

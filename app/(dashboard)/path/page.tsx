@@ -33,9 +33,12 @@ export default function PathPage() {
 
         const savedCurriculumStr = sessionStorage.getItem("skilliopath_curriculum");
         if (savedCurriculumStr) {
-          setModules(JSON.parse(savedCurriculumStr));
-          setIsLoading(false);
-          return;
+          const parsedModules = JSON.parse(savedCurriculumStr);
+          if (parsedModules && parsedModules.length > 0) {
+            setModules(parsedModules);
+            setIsLoading(false);
+            return;
+          }
         }
 
         const res = await fetch("/api/curriculum", {

@@ -115,19 +115,22 @@ export default function DashboardPage() {
         .eq('path_id', path.id)
         .order('order_index', { ascending: true });
         
-      if (modulesData) {
+      if (modulesData && modulesData.length > 0) {
         sessionStorage.setItem("skilliopath_curriculum", JSON.stringify(modulesData));
-        
-        const profileStr = sessionStorage.getItem("skilliopath_profile");
-        if (profileStr) {
-          const profile = JSON.parse(profileStr);
-          profile.skillToLearn = path.skill_to_learn;
-          profile.skillGaps = path.skill_gaps || [];
-          sessionStorage.setItem("skilliopath_profile", JSON.stringify(profile));
-        }
-        
-        router.push("/path");
+      } else {
+        sessionStorage.removeItem("skilliopath_curriculum");
       }
+        
+      const profileStr = sessionStorage.getItem("skilliopath_profile");
+      if (profileStr) {
+        const profile = JSON.parse(profileStr);
+        profile.skillToLearn = path.skill_to_learn;
+        profile.skillGaps = path.skill_gaps || [];
+        profile.pathId = path.id; // Ensure pathId is passed!
+        sessionStorage.setItem("skilliopath_profile", JSON.stringify(profile));
+      }
+      
+      router.push("/path");
     } catch (e) {
       console.error(e);
       setIsLoading(false);
