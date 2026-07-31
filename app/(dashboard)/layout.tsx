@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LearnerProfile } from "@/services/ai/client";
@@ -45,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar Navigation */}
       <aside className="w-64 border-r border-hairline bg-surface/50 backdrop-blur-md flex flex-col hidden md:flex">
         <div className="p-6 border-b border-hairline flex items-center gap-3">
-           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-background font-black text-xl">S</div>
+           <Image src="/logo.png" alt="SkillioPath Logo" width={32} height={32} className="w-8 h-8 object-contain" />
            <h2 className="text-xl font-display font-bold text-high tracking-tight">SkillioPath</h2>
         </div>
         
@@ -95,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Mobile Header */}
         <div className="md:hidden border-b border-hairline bg-surface/80 backdrop-blur-md p-4 sticky top-0 z-20 flex justify-between items-center">
            <div className="flex items-center gap-2">
-             <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-background font-black text-sm">S</div>
+             <Image src="/logo.png" alt="SkillioPath Logo" width={24} height={24} className="w-6 h-6 object-contain" />
              <span className="font-bold text-sm">SkillioPath</span>
            </div>
            <div className="flex gap-4 text-muted">

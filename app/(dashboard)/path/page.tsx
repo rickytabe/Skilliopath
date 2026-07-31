@@ -74,7 +74,7 @@ export default function PathPage() {
       });
       supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id as string).then(({data}) => {
          if (data) {
-           setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id]: p.stars_earned || 0 }), {} as Record<string, number>));
+           setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: p.stars_earned || 0 }), {} as Record<string, number>));
          }
       });
     }

@@ -40,7 +40,7 @@ export async function POST(req: Request) {
       .from('curriculum_modules')
       .update({
         explanation: lesson.explanation,
-        quiz: lesson.quiz,
+        quiz: lesson.quiz as any,
       })
       .eq('id', module.id);
 

@@ -16,8 +16,8 @@ export default function ProfilePage() {
       setProfile(parsedProfile);
       
       Promise.all([
-        supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id).single(),
-        supabase.from('user_progress').select('stars_earned').eq('profile_id', parsedProfile.id)
+        supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id as string).single(),
+        supabase.from('user_progress').select('stars_earned').eq('profile_id', parsedProfile.id as string)
       ]).then(([profileData, progressData]) => {
          const xp = profileData.data?.total_xp || 0;
          const level = profileData.data?.current_level || 1;

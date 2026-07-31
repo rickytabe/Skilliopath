@@ -120,6 +120,7 @@ export default function DiagnosticPage() {
 
     // Decide if we should keep asking or generate profile
     const userMessageCount = newHistory.filter((m) => m.role === "user").length;
+    if (!onboardingData) return;
     
     if (userMessageCount >= 2) { // Generate after 2 replies
       generateProfile(onboardingData, newHistory);
