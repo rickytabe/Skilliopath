@@ -33,7 +33,7 @@ export default function LessonPage() {
   // Audio state
   const [playingId, setPlayingId] = useState<string | null>(null);
 
-  const fetchLesson = async (p: LearnerProfile, m: CurriculumModule) => {
+  const fetchLesson = async (p: LearnerProfile, m: CurriculumModule, allMods?: CurriculumModule[]) => {
     setIsLoading(true);
     setHasError(false);
     try {
@@ -48,6 +48,19 @@ export default function LessonPage() {
       
       const data = await res.json();
       setLessonContent(data);
+
+      // 2. Pre-fetch next module in background
+      if (allMods) {
+        const currentIndex = allMods.findIndex(mod => mod.id === m.id);
+        if (currentIndex !== -1 && currentIndex < allMods.length - 1) {
+          const nextMod = allMods[currentIndex + 1];
+          fetch("/api/lesson", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile: p, module: nextMod }),
+          }).catch(e => console.error("Background prefetch failed:", e));
+        }
+      }
     } catch (error: unknown) {
       console.error(error);
       setHasError(true);
@@ -107,20 +120,22 @@ export default function LessonPage() {
           .eq("path_id", moduleData.path_id)
           .order("order_index", { ascending: true });
         
+        let formattedModules: CurriculumModule[] = [];
         if (allModules) {
-          setCurriculum(allModules.map(m => ({
+          formattedModules = allModules.map(m => ({
             id: m.id,
             title: m.title,
             angle: m.angle,
             status: m.status,
             timingLabel: m.timing_label,
-          })) as CurriculumModule[]);
+          })) as CurriculumModule[];
+          setCurriculum(formattedModules);
         }
 
         setProfile(profileObj);
         setActiveModule(moduleObj);
         
-        fetchLesson(profileObj, moduleObj);
+        fetchLesson(profileObj, moduleObj, formattedModules);
       } catch (err) {
         console.error(err);
         router.push("/path");
@@ -207,8 +222,8 @@ export default function LessonPage() {
       else if (percentage >= 0.7) stars = 2;
       else if (percentage >= 0.4) stars = 1;
 
-      const flawlessBonus = percentage === 1 ? 20 : 0;
-      const xp = 50 + (correctCount * 10) + flawlessBonus;
+      const flawlessBonus = percentage === 1 ? 5 : 0;
+      const xp = 10 + flawlessBonus;
 
       // Save to API
       fetch("/api/progress", {

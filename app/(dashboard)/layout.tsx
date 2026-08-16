@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { createClient } from "@/utils/supabase/client";
 import { logout } from "@/app/(auth)/actions";
 import { TestChatbot } from "@/components/TestChatbot";
+import { getLevelProgress, getTierForLevel } from "@/utils/xp";
 
 export interface UserProfile {
   id: string;
@@ -15,6 +16,7 @@ export interface UserProfile {
   current_career: string | null;
   total_xp: number | null;
   current_level: number | null;
+  avatar_url?: string | null;
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .single();
 
       if (profileData) {
-        setProfile(profileData as UserProfile);
+        setProfile({ ...profileData, avatar_url: user.user_metadata?.avatar_url || null } as UserProfile);
         setLiveStats({ totalXp: profileData.total_xp || 0, currentLevel: profileData.current_level || 1 });
       } else {
         // Automatically create a profile for OAuth users
@@ -67,8 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
     { name: "My Path", href: "/path", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg> },
-    { name: "Career Market", href: "/market", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg> },
-    { name: "Profile", href: "/profile", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> }
+    { name: "Career Market", href: "/market", icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg> }
   ];
 
   return (
@@ -107,32 +108,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        {profile && (
-          <div className="p-5 border-t border-hairline mt-auto bg-base">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm">
-                {profile.name?.charAt(0).toUpperCase()}
+        {profile && (() => {
+          const { progressPercentage, xpRemaining, currentLevel } = getLevelProgress(liveStats.totalXp);
+          const tier = getTierForLevel(currentLevel);
+          return (
+            <div className="p-5 border-t border-hairline mt-auto bg-base">
+              <Link href="/profile" className="flex items-center gap-3 mb-4 group cursor-pointer p-2 -mx-2 rounded-xl hover:bg-surface transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.name} className="w-10 h-10 rounded-full object-cover shadow-sm group-hover:ring-2 ring-primary/50 transition-all" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:ring-2 ring-primary/50 transition-all">
+                    {profile.name?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-high truncate group-hover:text-primary transition-colors">{profile.name}</p>
+                  <p className={`text-xs font-bold flex items-center gap-1.5 ${tier.color.split(' ')[0]}`}>
+                    <span className="w-4 h-4 flex items-center justify-center shrink-0">{tier.icon}</span> 
+                    <span>{tier.name} · Lvl {currentLevel}</span>
+                  </p>
+                </div>
+              </Link>
+              
+              <div>
+                <div className="flex justify-between items-end mb-1">
+                  <p className="text-[11px] text-mid font-semibold">{liveStats.totalXp} XP Total</p>
+                  <p className="text-[11px] text-muted">{xpRemaining} XP to level {currentLevel + 1}</p>
+                </div>
+                <div className="w-full bg-surface rounded-full h-2 border border-hairline overflow-hidden">
+                   <div className={`h-full rounded-full transition-all duration-1000 ease-out ${tier.bgClass}`} style={{ width: `${progressPercentage}%` }}></div>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-high truncate">{profile.name}</p>
-                <p className="text-xs text-primary font-bold">Level {liveStats.currentLevel}</p>
-              </div>
+              
+              <form action={logout} className="mt-5">
+                <button className="w-full py-2.5 text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all duration-200 border border-red-200 hover:border-red-300">
+                  Log out
+                </button>
+              </form>
             </div>
-            
-            <div>
-              <div className="w-full bg-surface rounded-full h-2 border border-hairline overflow-hidden">
-                 <div className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(liveStats.totalXp % 100)}%` }}></div>
-              </div>
-              <p className="text-[11px] text-right mt-1.5 text-mid font-semibold">{liveStats.totalXp} XP Total</p>
-            </div>
-            
-            <form action={logout} className="mt-5">
-              <button className="w-full py-2.5 text-sm font-bold text-muted hover:text-red-600 bg-surface hover:bg-red-50 rounded-xl transition-all duration-200 border border-hairline hover:border-red-200">
-                Log out
-              </button>
-            </form>
-          </div>
-        )}
+          );
+        })()}
       </aside>
 
       {/* Main Content Area */}

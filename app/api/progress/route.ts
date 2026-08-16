@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { getLevelFromXp } from "@/utils/xp";
 
 export async function POST(req: Request) {
   try {
@@ -41,8 +42,8 @@ export async function POST(req: Request) {
 
     // Add new XP to total XP
     const newTotalXp = (profile?.total_xp || 0) + xpEarned;
-    // Calculate new level (Level 1 is 0-99 XP, Level 2 is 100-199 XP, etc.)
-    const newLevel = Math.floor(newTotalXp / 100) + 1;
+    // Calculate new progressive level
+    const newLevel = getLevelFromXp(newTotalXp);
 
     // 3. Update the profile
     const { error: profileUpdateError } = await supabase

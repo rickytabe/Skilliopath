@@ -39,14 +39,22 @@ export async function POST(req: Request) {
     const { data: dbModules, error } = await supabase
       .from('curriculum_modules')
       .insert(
-        curriculum.map((m, index) => ({
-          path_id: profile.pathId,
-          title: m.title,
-          angle: m.angle,
-          timing_label: m.timingLabel,
-          order_index: m.order || index + 1,
-          status: index === 0 ? "current" : "locked"
-        }))
+        curriculum.map((m, index) => {
+          // Calculate strict timing sequence to avoid AI hallucinations
+          const dayNum = index + 1;
+          const weekNum = Math.ceil(dayNum / 5);
+          const dayOfWeek = dayNum % 5 === 0 ? 5 : dayNum % 5;
+          const calculatedTimingLabel = `Week ${weekNum} - Day ${dayOfWeek}`;
+
+          return {
+            path_id: profile.pathId,
+            title: m.title,
+            angle: m.angle,
+            timing_label: calculatedTimingLabel,
+            order_index: index + 1, // Force strictly sequential order
+            status: index === 0 ? "current" : "locked"
+          };
+        })
       )
       .select();
 

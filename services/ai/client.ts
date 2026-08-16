@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 export const ai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_NVIDIA_API_KEY || "",
+  apiKey: process.env.NEXT_PUBLIC_NVIDIA_API_KEY_2 || "",
   baseURL: "https://integrate.api.nvidia.com/v1",
 });
 

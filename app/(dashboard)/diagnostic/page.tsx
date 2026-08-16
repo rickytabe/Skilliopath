@@ -111,7 +111,7 @@ export default function DiagnosticPage() {
       
       const profile = await res.json();
       if (profile && !profile.error) {
-        router.push("/dashboard");
+        router.push("/path");
       } else {
         throw new Error(profile.error || "Failed to build profile.");
       }

@@ -5,6 +5,7 @@ import { LearnerProfile, CurriculumModule } from "@/services/ai/client";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Brain, Bot, ShieldCheck, Cloud, LineChart, Code, Briefcase, ClipboardList, Palette, Megaphone } from "lucide-react";
 
 export default function DashboardPage() {
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
@@ -237,16 +238,16 @@ export default function DashboardPage() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[
-                       { title: "Artificial Intelligence & ML", icon: "🧠", color: "bg-blue-50 text-blue-600 border-blue-200" },
-                       { title: "Generative AI & Workflows", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-                       { title: "Cybersecurity", icon: "🛡️", color: "bg-red-50 text-red-600 border-red-200" },
-                       { title: "Cloud Computing & DevOps", icon: "☁️", color: "bg-sky-50 text-sky-600 border-sky-200" },
-                       { title: "Data Science & Analytics", icon: "📊", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-                       { title: "Software Development", icon: "💻", color: "bg-slate-50 text-slate-700 border-slate-200" },
-                       { title: "Management Consulting", icon: "💼", color: "bg-amber-50 text-amber-600 border-amber-200" },
-                       { title: "Project Management", icon: "📋", color: "bg-orange-50 text-orange-600 border-orange-200" },
-                       { title: "UX/UI Design", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
-                       { title: "Digital Marketing", icon: "📱", color: "bg-pink-50 text-pink-600 border-pink-200" },
+                       { title: "Artificial Intelligence & ML", icon: <Brain className="w-6 h-6" />, color: "bg-blue-50 text-blue-600 border-blue-200" },
+                       { title: "Generative AI & Workflows", icon: <Bot className="w-6 h-6" />, color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+                       { title: "Cybersecurity", icon: <ShieldCheck className="w-6 h-6" />, color: "bg-red-50 text-red-600 border-red-200" },
+                       { title: "Cloud Computing & DevOps", icon: <Cloud className="w-6 h-6" />, color: "bg-sky-50 text-sky-600 border-sky-200" },
+                       { title: "Data Science & Analytics", icon: <LineChart className="w-6 h-6" />, color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                       { title: "Software Development", icon: <Code className="w-6 h-6" />, color: "bg-slate-50 text-slate-700 border-slate-200" },
+                       { title: "Management Consulting", icon: <Briefcase className="w-6 h-6" />, color: "bg-amber-50 text-amber-600 border-amber-200" },
+                       { title: "Project Management", icon: <ClipboardList className="w-6 h-6" />, color: "bg-orange-50 text-orange-600 border-orange-200" },
+                       { title: "UX/UI Design", icon: <Palette className="w-6 h-6" />, color: "bg-purple-50 text-purple-600 border-purple-200" },
+                       { title: "Digital Marketing", icon: <Megaphone className="w-6 h-6" />, color: "bg-pink-50 text-pink-600 border-pink-200" },
                     ].map((skill, i) => (
                       <Link key={i} href={`/onboarding?skill=${encodeURIComponent(skill.title)}`} className="group flex flex-col justify-between bg-white border border-hairline p-6 rounded-2xl hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-5 border ${skill.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>

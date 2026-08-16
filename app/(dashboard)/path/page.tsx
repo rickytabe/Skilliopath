@@ -6,6 +6,7 @@ import Link from "next/link";
 import { LearnerProfile, CurriculumModule } from "@/services/ai/client";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
+import { Brain, Bot, ShieldCheck, Cloud, LineChart, Code, Briefcase, ClipboardList, Palette, Megaphone } from "lucide-react";
 
 function PathContent() {
   const router = useRouter();
@@ -14,14 +15,49 @@ function PathContent() {
   const [modules, setModules] = useState<CurriculumModule[]>([]);
   const [allPaths, setAllPaths] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState("Analyzing your skills...");
   
   const searchParams = useSearchParams();
 
+  const handleRetryGeneration = async () => {
+    if (!profile) return;
+    setIsGenerating(true);
+    setLoadingProgress(0);
+    try {
+      const res = await fetch("/api/curriculum", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pathId: profile.pathId,
+          name: profile.name,
+          currentCareer: profile.currentCareer,
+          skillToLearn: profile.skillToLearn,
+          skillGaps: profile.skillGaps
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      setModules(data);
+      toast.success("Curriculum generated successfully!");
+    } catch (err: any) {
+      console.error("Error retrying curriculum generation:", err);
+      toast.error("Failed to generate curriculum. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   useEffect(() => {
-    if (!isLoading) return;
+    if (!isGenerating) return;
     const interval = setInterval(() => {
       setLoadingProgress((prev) => {
         if (prev >= 98) return prev;
@@ -30,7 +66,7 @@ function PathContent() {
       });
     }, 200);
     return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [isGenerating]);
 
   useEffect(() => {
     if (loadingProgress > 20 && loadingProgress <= 50) setLoadingText("Identifying skill gaps...");
@@ -101,6 +137,7 @@ function PathContent() {
           return;
         }
 
+        setIsGenerating(true);
         const res = await fetch("/api/curriculum", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -128,6 +165,7 @@ function PathContent() {
         toast.error("Failed to load curriculum. Please refresh.");
       } finally {
         setIsLoading(false);
+        setIsGenerating(false);
       }
     }
 
@@ -144,9 +182,9 @@ function PathContent() {
     }
   }, [profile]);
 
-  if (isLoading) {
+  if (isGenerating) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 ">
         <div className="w-full max-w-sm flex flex-col items-center gap-8">
           
           <div className="relative w-32 h-32 flex items-center justify-center">
@@ -193,6 +231,17 @@ function PathContent() {
     );
   }
 
+  if (isLoading && !isGenerating) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-surface" />
+          <div className="h-4 w-32 bg-surface rounded-lg" />
+        </div>
+      </main>
+    );
+  }
+
   if (!profile) {
     if (allPaths.length > 0) {
       return (
@@ -225,7 +274,7 @@ function PathContent() {
     }
 
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
         <div className="w-full max-w-md flex flex-col items-center gap-6 text-center bg-white p-10 rounded-3xl border border-hairline shadow-sm">
           <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-muted mb-2">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,16 +297,16 @@ function PathContent() {
            <h4 className="text-sm font-bold text-muted uppercase tracking-wider mb-5 text-center">Or start a Trending Skill</h4>
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              {[
-                { title: "Artificial Intelligence & ML", icon: "🧠", color: "bg-blue-50 text-blue-600 border-blue-200" },
-                { title: "Generative AI & Workflows", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-                { title: "Cybersecurity", icon: "🛡️", color: "bg-red-50 text-red-600 border-red-200" },
-                { title: "Cloud Computing & DevOps", icon: "☁️", color: "bg-sky-50 text-sky-600 border-sky-200" },
-                { title: "Data Science & Analytics", icon: "📊", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
-                { title: "Software Development", icon: "💻", color: "bg-slate-50 text-slate-700 border-slate-200" },
-                { title: "Management Consulting", icon: "💼", color: "bg-amber-50 text-amber-600 border-amber-200" },
-                { title: "Project Management", icon: "📋", color: "bg-orange-50 text-orange-600 border-orange-200" },
-                { title: "UX/UI Design", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
-                { title: "Digital Marketing", icon: "📱", color: "bg-pink-50 text-pink-600 border-pink-200" },
+                { title: "Artificial Intelligence & ML", icon: <Brain className="w-6 h-6" />, color: "bg-blue-50 text-blue-600 border-blue-200" },
+                { title: "Generative AI & Workflows", icon: <Bot className="w-6 h-6" />, color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+                { title: "Cybersecurity", icon: <ShieldCheck className="w-6 h-6" />, color: "bg-red-50 text-red-600 border-red-200" },
+                { title: "Cloud Computing & DevOps", icon: <Cloud className="w-6 h-6" />, color: "bg-sky-50 text-sky-600 border-sky-200" },
+                { title: "Data Science & Analytics", icon: <LineChart className="w-6 h-6" />, color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                { title: "Software Development", icon: <Code className="w-6 h-6" />, color: "bg-slate-50 text-slate-700 border-slate-200" },
+                { title: "Management Consulting", icon: <Briefcase className="w-6 h-6" />, color: "bg-amber-50 text-amber-600 border-amber-200" },
+                { title: "Project Management", icon: <ClipboardList className="w-6 h-6" />, color: "bg-orange-50 text-orange-600 border-orange-200" },
+                { title: "UX/UI Design", icon: <Palette className="w-6 h-6" />, color: "bg-purple-50 text-purple-600 border-purple-200" },
+                { title: "Digital Marketing", icon: <Megaphone className="w-6 h-6" />, color: "bg-pink-50 text-pink-600 border-pink-200" },
              ].map((skill, i) => (
                <Link key={i} href={`/onboarding?skill=${encodeURIComponent(skill.title)}`} className="group flex flex-col items-center text-center bg-white border border-hairline p-5 rounded-2xl hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4 border ${skill.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
@@ -320,8 +369,28 @@ function PathContent() {
 
         {/* The Roadmap */}
         <div className="relative">
-          {/* Central Line for Desktop */}
-          <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-hairline transform md:-translate-x-1/2 hidden sm:block"></div>
+          {modules.length === 0 ? (
+            <div className="text-center py-20 bg-surface border border-hairline rounded-3xl animate-fade-in-up shadow-sm">
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-high mb-2">Generation Failed</h3>
+              <p className="text-muted text-sm max-w-md mx-auto mb-6">
+                We encountered an error while trying to generate your personalized curriculum. This can happen if the AI is overloaded.
+              </p>
+              <button 
+                onClick={handleRetryGeneration}
+                className="px-6 py-3 bg-primary text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+              >
+                Retry Generation
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Central Line for Desktop */}
+              <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-hairline transform md:-translate-x-1/2 hidden sm:block"></div>
 
           <div className="space-y-12 sm:space-y-0 relative">
             {modules.map((mod, idx) => {
@@ -352,7 +421,7 @@ function PathContent() {
                     <div className="hidden md:block w-5/12"></div>
 
                     {/* Center Node / Icon */}
-                    <div className="absolute left-0 sm:left-6 md:left-1/2 w-12 h-12 transform -translate-x-0 sm:-translate-x-1/2 flex items-center justify-center z-10">
+                    <div className="absolute left-0 sm:left-6 md:left-1/2 w-12 h-12 transform translate-x-0 sm:-translate-x-1/2 flex items-center justify-center z-10">
                       {isCurrent && (
                         <div className="w-10 h-10 rounded-full bg-base border-4 border-primary shadow-[0_0_20px_rgba(242,169,59,0.5)] flex items-center justify-center animate-pulse">
                           <div className="w-3 h-3 bg-primary rounded-full"></div>
@@ -439,8 +508,8 @@ function PathContent() {
               <div className="relative mt-24 flex flex-col md:items-center pt-4 md:pt-16">
 
                 {/* Goal Icon */}
-                <div className="absolute top-0 left-0 sm:left-6 md:left-1/2 w-12 h-12 transform -translate-x-0 sm:-translate-x-1/2 flex items-center justify-center z-10">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-[0_0_40px_rgba(234,179,8,0.5)] flex items-center justify-center border-4 border-background z-20">
+                <div className="absolute top-0 left-0 sm:left-6 md:left-1/2 w-12 h-12 transform translate-x-0 sm:-translate-x-1/2 flex items-center justify-center z-10">
+                  <div className="w-16 h-16 rounded-full bg-linear-to-br from-yellow-400 to-yellow-600 shadow-[0_0_40px_rgba(234,179,8,0.5)] flex items-center justify-center border-4 border-background z-20">
                     <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                     </svg>
@@ -471,6 +540,8 @@ function PathContent() {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </div>
     </main>
