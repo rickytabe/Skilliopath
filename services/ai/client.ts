@@ -18,6 +18,8 @@ export interface LearnerProfile {
   currentLevel: string;
   timeline: string;
   skillGaps: string[];
+  country?: string;
+  continent?: string;
   tone: string;
 }
 

@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/client";
 import { getLevelProgress, getTierForLevel } from "@/utils/xp";
 import { toast } from "sonner";
 import Link from "next/link";
+import { MapPin } from "lucide-react";
+import { CountryWithFlag } from "@/utils/country";
 
 interface ProfileData {
   id: string;
@@ -19,6 +21,8 @@ interface ProfileData {
   completedModules: number;
   totalModules: number;
   learningPaths: { id: string; skill: string; createdAt: string; moduleCount: number }[];
+  country: string | null;
+  continent: string | null;
 }
 
 export default function ProfilePage() {
@@ -30,6 +34,7 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState("");
   const [editCareer, setEditCareer] = useState("");
   const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<Blob | null>(null);
 
   useEffect(() => {
     async function loadProfile() {
@@ -44,6 +49,16 @@ export default function ProfilePage() {
           .single();
 
         if (!profileData) return;
+
+        // Auto-sync Google avatar_url to database if it's missing in DB
+        let currentAvatarUrl = profileData.avatar_url;
+        if (!currentAvatarUrl && user.user_metadata?.avatar_url) {
+          currentAvatarUrl = user.user_metadata.avatar_url;
+          // Fail gracefully if column doesn't exist yet
+          try {
+            await supabase.from("profiles").update({ avatar_url: currentAvatarUrl }).eq("id", user.id);
+          } catch (e) {}
+        }
 
         // Fetch all learning paths with module counts
         const { data: pathsData } = await supabase
@@ -93,7 +108,7 @@ export default function ProfilePage() {
           id: user.id,
           name: profileData.name || "Learner",
           email: user.email || "",
-          avatarUrl: user.user_metadata?.avatar_url || null,
+          avatarUrl: currentAvatarUrl,
           currentCareer: profileData.current_career,
           totalXp: profileData.total_xp || 0,
           currentLevel: profileData.current_level || 1,
@@ -102,11 +117,13 @@ export default function ProfilePage() {
           completedModules,
           totalModules,
           learningPaths: enrichedPaths,
+          country: profileData.country,
+          continent: profileData.continent,
         });
 
         setEditName(profileData.name || "");
         setEditCareer(profileData.current_career || "");
-        setEditAvatarUrl(user.user_metadata?.avatar_url || null);
+        setEditAvatarUrl(currentAvatarUrl);
       } catch (err) {
         console.error("Error loading profile:", err);
         toast.error("Failed to load profile data.");
@@ -153,8 +170,12 @@ export default function ProfilePage() {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(img, 0, 0, width, height);
         
-        const dataUrl = canvas.toDataURL('image/webp', 0.8);
-        setEditAvatarUrl(dataUrl);
+        canvas.toBlob((blob) => {
+          if (blob) {
+            setAvatarFile(blob);
+            setEditAvatarUrl(URL.createObjectURL(blob));
+          }
+        }, 'image/webp', 0.8);
       };
       img.src = event.target?.result as string;
     };
@@ -170,25 +191,45 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
+      let finalAvatarUrl = editAvatarUrl;
+      
+      // Upload to Supabase Storage if there's a new file
+      if (avatarFile) {
+        const filePath = `${profile.id}-${Date.now()}.webp`;
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, avatarFile, { upsert: true, contentType: 'image/webp' });
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+          
+        finalAvatarUrl = publicUrlData.publicUrl;
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({
           name: editName.trim(),
           current_career: editCareer.trim() || null,
+          avatar_url: finalAvatarUrl,
         })
         .eq("id", profile.id);
 
       if (error) throw error;
 
-      if (editAvatarUrl !== profile.avatarUrl) {
+      if (finalAvatarUrl !== profile.avatarUrl) {
         await supabase.auth.updateUser({
-          data: { avatar_url: editAvatarUrl }
+          data: { avatar_url: finalAvatarUrl }
         });
       }
 
       setProfile((prev) =>
-        prev ? { ...prev, name: editName.trim(), currentCareer: editCareer.trim() || null, avatarUrl: editAvatarUrl } : prev
+        prev ? { ...prev, name: editName.trim(), currentCareer: editCareer.trim() || null, avatarUrl: finalAvatarUrl } : prev
       );
+      setAvatarFile(null);
       setIsEditing(false);
       toast.success("Profile updated successfully!");
     } catch (err) {
@@ -395,6 +436,21 @@ export default function ProfilePage() {
                   ) : (
                     <p className="text-sm font-medium text-high">{profile.currentCareer || "Not set"}</p>
                   )}
+                </div>
+
+                {/* Location - Read Only (Auto Detected) */}
+                <div className="bg-surface/50 border border-hairline rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <MapPin className="w-4 h-4 text-muted" />
+                    <span className="text-xs font-bold uppercase tracking-wider text-muted">Location</span>
+                  </div>
+                  <p className="text-sm font-medium text-high">
+                    {profile.country ? (
+                      <><CountryWithFlag countryStr={profile.country} /> <span className="text-muted font-normal">({profile.continent})</span></>
+                    ) : (
+                      <span className="text-muted italic">Detecting...</span>
+                    )}
+                  </p>
                 </div>
 
                 {/* Account ID - Read Only */}
