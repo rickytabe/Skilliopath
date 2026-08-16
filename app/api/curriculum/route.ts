@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateCurriculum } from "@/services/ai/curriculum";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +12,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    const supabase = await createClient();
 
     // Check if curriculum already exists in the database
     const { data: existingModules, error: existingError } = await supabase
@@ -37,13 +39,13 @@ export async function POST(req: Request) {
     const { data: dbModules, error } = await supabase
       .from('curriculum_modules')
       .insert(
-        curriculum.map((m) => ({
+        curriculum.map((m, index) => ({
           path_id: profile.pathId,
           title: m.title,
           angle: m.angle,
           timing_label: m.timingLabel,
-          order_index: m.order,
-          status: m.status
+          order_index: m.order || index + 1,
+          status: index === 0 ? "current" : "locked"
         }))
       )
       .select();

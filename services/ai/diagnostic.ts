@@ -14,7 +14,8 @@ They want to learn ${skillToLearn} in ${timeline}.
 Their current level is: ${currentLevel}.
 
 Based on the conversation history, extract their profile.
-Extract exactly 3 specific, highly relevant digital skill gaps they need to work on in ${skillToLearn}. 
+1. Refine and formalize their desired skill into a professional, concise course title (e.g., if they say "i wanna learn react", the \`skillToLearn\` should be "React Development"). Do not just repeat their raw text.
+2. Extract exactly 3 specific, highly relevant digital skill gaps they need to work on. 
 Determine the best teaching tone for them based on their communication style (e.g., "encouraging and practical", "direct and analytical").
 `;
 

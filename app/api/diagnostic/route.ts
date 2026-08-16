@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateProfile } from "@/services/ai/diagnostic";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +14,8 @@ export async function POST(req: Request) {
     }
 
     const profile = await generateProfile(history, onboardingData);
+
+    const supabase = await createClient();
 
     const { data: dbPath, error } = await supabase
       .from('learning_paths')

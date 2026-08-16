@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 
 const SUGGESTED_CAREERS = [
   "Marketing",
@@ -29,18 +30,27 @@ export default function OnboardingPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    const stored = localStorage.getItem("skilliopath_profile_identity");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.id && parsed.name && parsed.current_career) {
-          setSavedProfile(parsed);
-          setName(parsed.name);
-          setCurrentCareer(parsed.current_career);
+    const fetchProfile = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        if (profile) {
+          setSavedProfile(profile as any);
+          setName(profile.name || "");
+          setCurrentCareer(profile.current_career === "Setting up..." ? "" : (profile.current_career || ""));
         }
-      } catch (e) {}
-    }
-    setIsInitializing(false);
+      }
+      
+      const searchParams = new URLSearchParams(window.location.search);
+      const skillParam = searchParams.get('skill');
+      if (skillParam) {
+        setSkillToLearn(skillParam);
+      }
+      
+      setIsInitializing(false);
+    };
+    fetchProfile();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,22 +67,19 @@ export default function OnboardingPage() {
       let finalCareer = currentCareer;
 
       if (!savedProfile) {
+        // Fallback if somehow they are not logged in (should be caught by layout)
         const res = await fetch("/api/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: name.trim(), currentCareer: currentCareer.trim() })
+          body: JSON.stringify({ name: finalName, currentCareer: finalCareer })
         });
-        
         if (!res.ok) throw new Error("Failed to create profile");
-        
         const newProfile = await res.json();
         profileId = newProfile.id;
-        finalName = newProfile.name;
-        finalCareer = newProfile.current_career;
-
-        const identity = { id: profileId as string, name: finalName, current_career: finalCareer };
-        localStorage.setItem("skilliopath_profile_identity", JSON.stringify(identity));
-        setSavedProfile(identity);
+      } else {
+        // Update their profile in Supabase (especially to overwrite "Setting up..." from OAuth)
+        const supabase = createClient();
+        await supabase.from('profiles').update({ name: finalName, current_career: finalCareer }).eq('id', profileId);
       }
 
       sessionStorage.setItem(
@@ -103,13 +110,13 @@ export default function OnboardingPage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-16 bg-grid">
       <div className="w-full max-w-md mb-8">
         <Link
-          href="/"
+          href="/dashboard"
           className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-high transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-          Back
+          Back to Dashboard
         </Link>
       </div>
 

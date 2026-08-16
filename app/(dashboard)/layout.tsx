@@ -4,35 +4,63 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LearnerProfile } from "@/services/ai/client";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
+import { logout } from "@/app/(auth)/actions";
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  current_career: string | null;
+  total_xp: number | null;
+  current_level: number | null;
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [profile, setProfile] = useState<LearnerProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1 });
 
   useEffect(() => {
-    let parsedProfile: any = null;
-    const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
-    if (savedProfileStr) {
-      parsedProfile = JSON.parse(savedProfileStr);
-    } else {
-      const identityStr = localStorage.getItem("skilliopath_profile_identity");
-      if (identityStr) {
-        parsedProfile = JSON.parse(identityStr);
+    const fetchUserAndProfile = async () => {
+      const supabaseClient = createClient();
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      
+      if (!user) {
+        router.push("/login");
+        return;
       }
-    }
 
-    if (parsedProfile && parsedProfile.id) {
-      setProfile(parsedProfile);
-      supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id as string).single().then(({data}) => {
-         if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
-      });
-    } else {
-      router.push("/onboarding");
-    }
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData as UserProfile);
+        setLiveStats({ totalXp: profileData.total_xp || 0, currentLevel: profileData.current_level || 1 });
+      } else {
+        // Automatically create a profile for OAuth users
+        const username = user.email ? user.email.split('@')[0] : "Learner";
+        const { data: newProfile } = await supabase.from('profiles').insert({
+          id: user.id,
+          name: username,
+          current_career: "Setting up...",
+          total_xp: 0,
+          current_level: 1
+        }).select().single();
+        
+        if (newProfile) {
+          setProfile(newProfile as UserProfile);
+          setLiveStats({ totalXp: 0, currentLevel: 1 });
+          router.push("/onboarding");
+        }
+      }
+    };
+
+    fetchUserAndProfile();
   }, [router]);
 
   const navItems = [
@@ -42,59 +70,73 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 border-r border-hairline bg-surface/50 backdrop-blur-md flex flex-col hidden md:flex">
-        <div className="p-6 border-b border-hairline flex items-center gap-3">
-           <Image src="/logo.png" alt="SkillioPath Logo" width={32} height={32} className="w-8 h-8 object-contain" />
+    <div className="flex h-screen bg-surface overflow-hidden relative">
+      
+      {/* Sidebar Navigation - Clean, Solid Design */}
+      <aside className="w-64 border-r border-hairline bg-white hidden md:flex flex-col z-10">
+        
+        <div className="p-6 border-b border-hairline flex items-center gap-0">
+           <Image src="/logo.png" alt="SkillioPath Logo" width={50} height={50} className="w-15 h-15 object-contain drop-shadow-sm" />
            <h2 className="text-xl font-display font-bold text-high tracking-tight">SkillioPath</h2>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link 
                 key={item.name} 
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                className={`group flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-bold transition-all duration-200 ${
                   isActive 
-                    ? 'bg-primary/10 text-primary border border-primary/20 shadow-sm' 
-                    : 'text-muted hover:bg-white/5 hover:text-high'
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-mid hover:bg-surface hover:text-high'
                 }`}
               >
-                <div className={`${isActive ? 'text-primary' : 'text-muted'}`}>
+                <div className={`transition-transform duration-200 ${isActive ? 'text-primary scale-110' : 'text-muted group-hover:text-high'}`}>
                   {item.icon}
                 </div>
                 {item.name}
+                {isActive && (
+                  <div className="ml-auto w-2 h-2 rounded-full bg-primary" />
+                )}
               </Link>
             )
           })}
         </nav>
 
         {profile && (
-          <div className="p-4 border-t border-hairline bg-surface-light/30">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-background font-bold text-lg">
+          <div className="p-5 border-t border-hairline mt-auto bg-base">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shadow-sm">
                 {profile.name?.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <p className="text-sm font-bold text-high line-clamp-1">{profile.name}</p>
-                <p className="text-xs text-primary font-semibold">Level {liveStats.currentLevel}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-high truncate">{profile.name}</p>
+                <p className="text-xs text-primary font-bold">Level {liveStats.currentLevel}</p>
               </div>
             </div>
-            <div className="w-full bg-background/50 rounded-full h-1.5 mt-2 border border-hairline">
-               <div className="bg-primary h-1.5 rounded-full" style={{ width: `${(liveStats.totalXp % 100)}%` }}></div>
+            
+            <div>
+              <div className="w-full bg-surface rounded-full h-2 border border-hairline overflow-hidden">
+                 <div className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${(liveStats.totalXp % 100)}%` }}></div>
+              </div>
+              <p className="text-[11px] text-right mt-1.5 text-mid font-semibold">{liveStats.totalXp} XP Total</p>
             </div>
-            <p className="text-[10px] text-right mt-1 text-muted font-medium">{liveStats.totalXp} Total XP</p>
+            
+            <form action={logout} className="mt-5">
+              <button className="w-full py-2.5 text-sm font-bold text-muted hover:text-red-600 bg-surface hover:bg-red-50 rounded-xl transition-all duration-200 border border-hairline hover:border-red-200">
+                Log out
+              </button>
+            </form>
           </div>
         )}
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto relative">
+      <main className="flex-1 overflow-y-auto bg-base relative z-10 custom-scrollbar">
         {/* Mobile Header */}
-        <div className="md:hidden border-b border-hairline bg-surface/80 backdrop-blur-md p-4 sticky top-0 z-20 flex justify-between items-center">
+        <div className="md:hidden border-b border-hairline bg-white p-4 sticky top-0 z-20 flex justify-between items-center">
            <div className="flex items-center gap-2">
              <Image src="/logo.png" alt="SkillioPath Logo" width={24} height={24} className="w-6 h-6 object-contain" />
              <span className="font-bold text-sm">SkillioPath</span>

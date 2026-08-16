@@ -19,8 +19,8 @@ Requirements:
 2. Keep titles in plain, engaging language (no generic "Module 1:").
 3. Determine a specific "angle" for each module. Do NOT use complex technical analogies or forced jargon. Keep it incredibly simple, relatable, and easy to digest using long-lasting words.
 4. Estimate a duration for each module (e.g., "1 hour", "30 mins").
-5. Provide a timingLabel for each module that indicates its position in the timeline (e.g., "Week 1 - Day 1", "Week 1 - Day 2", "Week 2 - Day 1"). This acts as a visual group label.
-6. Set the status of the first module to "current" and the rest to "locked".
+5. Provide a timingLabel for each module that indicates its position in the timeline (e.g., "Week 1 - Day 1", "Week 1 - Day 2"). This acts as a visual group label.
+6. CRITICAL: Do NOT generate duplicate or nearly identical modules. Every single module MUST teach a distinct, unique concept. Do not repeat the same topic across multiple days.
 `;
 
   const response = await ai.models.generateContent({

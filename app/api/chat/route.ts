@@ -25,6 +25,7 @@ Rules:
 2. Keep your responses very concise (under 2 sentences).
 3. Do not be overly enthusiastic; maintain a "quiet and disciplined" professional tone.
 4. If this is the start of the conversation (history is empty), ask a targeted question assessing their true baseline in ${skillToLearn} given they are a ${currentLevel}.
+5. Speak in plain, extremely simple English. Do not use complex industry jargon, abstract concepts, or big words. If you must refer to a technical concept, explain it in layperson terms (e.g., instead of "digital marketing channels," say "places online like Facebook or Google where people find you").
 `;
 
     const contents: { role: string; parts: { text: string }[] }[] = [

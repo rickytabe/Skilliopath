@@ -4,47 +4,106 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LearnerProfile, CurriculumModule } from "@/services/ai/client";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 
 export default function PathPage() {
   const router = useRouter();
+  const supabase = createClient();
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [modules, setModules] = useState<CurriculumModule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1 });
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingText, setLoadingText] = useState("Analyzing your skills...");
+
+  useEffect(() => {
+    if (!isLoading) return;
+    const interval = setInterval(() => {
+      setLoadingProgress((prev) => {
+        if (prev >= 98) return prev;
+        const increment = prev < 50 ? 5 : prev < 80 ? 2 : 0.5;
+        return Math.min(99, prev + increment);
+      });
+    }, 200);
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  useEffect(() => {
+    if (loadingProgress > 20 && loadingProgress <= 50) setLoadingText("Identifying skill gaps...");
+    else if (loadingProgress > 50 && loadingProgress <= 80) setLoadingText("Structuring daily modules...");
+    else if (loadingProgress > 80) setLoadingText("Finalizing personalized path...");
+  }, [loadingProgress]);
 
   useEffect(() => {
     async function loadOrGenerate() {
       try {
-        const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
-        if (!savedProfileStr) {
-          const hasIdentity = localStorage.getItem("skilliopath_profile_identity");
-          if (hasIdentity) {
-            router.push("/dashboard");
-          } else {
-            router.push("/onboarding");
-          }
+        const searchParams = new URLSearchParams(window.location.search);
+        let pathId = searchParams.get('id');
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.push("/login");
           return;
         }
-        const parsedProfile = JSON.parse(savedProfileStr) as LearnerProfile;
-        setProfile(parsedProfile);
 
-        const savedCurriculumStr = sessionStorage.getItem("skilliopath_curriculum");
-        if (savedCurriculumStr) {
-          const parsedModules = JSON.parse(savedCurriculumStr);
-          if (parsedModules && parsedModules.length > 0) {
-            setModules(parsedModules);
-            setIsLoading(false);
-            return;
-          }
+        let pathData;
+        if (pathId) {
+           const { data } = await supabase.from('learning_paths').select('*').eq('id', pathId).single();
+           pathData = data;
+        } else {
+           const { data } = await supabase.from('learning_paths').select('*').eq('profile_id', user.id).order('created_at', { ascending: false }).limit(1).single();
+           pathData = data;
+           if (pathData) pathId = pathData.id;
+        }
+
+        if (!pathData) {
+          setIsLoading(false);
+          return;
+        }
+        
+        const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+
+        setProfile({
+           id: user.id,
+           name: userProfile?.name || "Learner",
+           skillToLearn: pathData.skill_to_learn,
+           skillGaps: pathData.skill_gaps || [],
+           currentCareer: userProfile?.current_career || "Student",
+           pathId: pathData.id
+        } as any);
+
+        const { data: modulesData } = await supabase
+          .from('curriculum_modules')
+          .select('*')
+          .eq('path_id', pathData.id)
+          .order('order_index', { ascending: true });
+
+        if (modulesData && modulesData.length > 0) {
+          const formattedModules = modulesData.map(m => ({
+            id: m.id,
+            title: m.title,
+            angle: m.angle,
+            timingLabel: m.timing_label,
+            order: m.order_index,
+            status: m.status
+          }));
+          setModules(formattedModules as any);
+          setIsLoading(false);
+          return;
         }
 
         const res = await fetch("/api/curriculum", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(parsedProfile),
+          body: JSON.stringify({
+            pathId: pathData.id,
+            name: userProfile?.name || "Learner",
+            currentCareer: userProfile?.current_career || "Student",
+            skillToLearn: pathData.skill_to_learn,
+            skillGaps: pathData.skill_gaps || []
+          }),
         });
 
         if (!res.ok) {
@@ -57,7 +116,6 @@ export default function PathPage() {
         }
 
         setModules(data);
-        sessionStorage.setItem("skilliopath_curriculum", JSON.stringify(data));
       } catch (err: unknown) {
         console.error("Error loading curriculum:", err);
         const error = err as Error;
@@ -72,13 +130,13 @@ export default function PathPage() {
 
   useEffect(() => {
     if (profile && profile.id) {
-      supabase.from('profiles').select('total_xp, current_level').eq('id', profile.id as string).single().then(({data}) => {
-         if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
+      supabase.from('profiles').select('total_xp, current_level').eq('id', profile.id as string).single().then(({ data }) => {
+        if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
       });
-      supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id as string).then(({data}) => {
-         if (data) {
-           setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: p.stars_earned || 0 }), {} as Record<string, number>));
-         }
+      supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id as string).then(({ data }) => {
+        if (data) {
+          setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: p.stars_earned || 0 }), {} as Record<string, number>));
+        }
       });
     }
   }, [profile]);
@@ -86,26 +144,103 @@ export default function PathPage() {
   if (isLoading) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
-        <div className="flex flex-col items-center gap-6 animate-pulse">
-          <div className="flex gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-2 h-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+        <div className="w-full max-w-sm flex flex-col items-center gap-8">
+          
+          <div className="relative w-32 h-32 flex items-center justify-center">
+            {/* Background ring */}
+            <svg className="absolute inset-0 w-full h-full text-surface -rotate-90" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="8" />
+            </svg>
+            {/* Animated progress ring */}
+            <svg className="absolute inset-0 w-full h-full text-primary -rotate-90 transition-all duration-300 ease-out" viewBox="0 0 100 100" fill="none">
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="45" 
+                stroke="currentColor" 
+                strokeWidth="8" 
+                strokeLinecap="round"
+                strokeDasharray="283"
+                strokeDashoffset={283 - (283 * loadingProgress) / 100}
+              />
+            </svg>
+            {/* Center percentage */}
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className="text-3xl font-display font-bold text-high">{Math.round(loadingProgress)}%</span>
+            </div>
           </div>
-          <p className="text-muted font-medium tracking-wide text-sm uppercase">Mapping your day-by-day roadmap...</p>
+          
+          <div className="w-full flex flex-col gap-3">
+             <div className="flex justify-between text-sm font-medium">
+               <span className="text-high">Generating Curriculum</span>
+               <span className="text-primary animate-pulse">{loadingText}</span>
+             </div>
+             <div className="w-full h-2 bg-surface rounded-full overflow-hidden shadow-inner">
+               <div 
+                 className="h-full bg-primary transition-all duration-300 ease-out relative"
+                 style={{ width: `${loadingProgress}%` }}
+               >
+                 <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" />
+               </div>
+             </div>
+          </div>
+          
         </div>
       </main>
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+        <div className="w-full max-w-md flex flex-col items-center gap-6 text-center bg-white p-10 rounded-3xl border border-hairline shadow-sm">
+          <div className="w-16 h-16 bg-surface rounded-full flex items-center justify-center text-muted mb-2">
+            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold font-display text-high tracking-tight">No Active Path</h2>
+          <p className="text-mid text-sm leading-relaxed max-w-xs">
+            You haven't generated a learning path yet. Let our AI figure out exactly what you need to learn.
+          </p>
+          <Link href="/onboarding" className="mt-4 px-8 py-3 bg-primary text-white font-semibold rounded-full hover:bg-primary-hover hover:-translate-y-0.5 transition-all shadow-[0_0_20px_rgba(242,169,59,0.3)]">
+            Create Your Path
+          </Link>
+          <Link href="/dashboard" className="text-sm font-semibold text-muted hover:text-primary transition-colors mt-2">
+            Return to Dashboard
+          </Link>
+        </div>
+        
+        <div className="w-full max-w-3xl mt-12 animate-fade-in-up" style={{animationDelay: '100ms'}}>
+           <h4 className="text-sm font-bold text-muted uppercase tracking-wider mb-5 text-center">Or start a Trending Skill</h4>
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+             {[
+                { title: "Advanced AI Prompting", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+                { title: "UGC Content Creation", icon: "📸", color: "bg-pink-50 text-pink-600 border-pink-200" },
+                { title: "High-Converting Copywriting", icon: "✍️", color: "bg-amber-50 text-amber-600 border-amber-200" },
+                { title: "React Development", icon: "⚛️", color: "bg-blue-50 text-blue-600 border-blue-200" },
+                { title: "UI/UX Design Masterclass", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
+                { title: "Data Science with Python", icon: "🐍", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+             ].map((skill, i) => (
+               <Link key={i} href={`/onboarding?skill=${encodeURIComponent(skill.title)}`} className="group flex flex-col items-center text-center bg-white border border-hairline p-5 rounded-2xl hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4 border ${skill.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>
+                    {skill.icon}
+                  </div>
+                  <h5 className="font-bold text-sm text-high group-hover:text-primary transition-colors leading-tight">{skill.title}</h5>
+               </Link>
+             ))}
+           </div>
+        </div>
+      </main>
+    );
+  }
 
   let currentTimingLabel = "";
 
   return (
     <main className="min-h-screen bg-background px-4 sm:px-6 pt-24 pb-32 overflow-x-hidden">
       <div className="mx-auto max-w-5xl">
-        
+
         {errorMsg && (
           <div className="mb-6 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-500 text-center shadow-lg backdrop-blur-md">
             {errorMsg}
@@ -117,7 +252,7 @@ export default function PathPage() {
           <h1 className="text-4xl sm:text-5xl font-bold font-display text-high mb-6">
             Master <span className="text-gold-gradient">{profile.skillToLearn}</span>
           </h1>
-          
+
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <span className="px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border border-primary/20 rounded-full">
               Timeline: {profile.timeline}
@@ -172,10 +307,9 @@ export default function PathPage() {
                   )}
 
                   {/* Node Row */}
-                  <div className={`relative flex items-center justify-start md:justify-between w-full group ${
-                    isEven ? "md:flex-row-reverse" : "md:flex-row"
-                  }`}>
-                    
+                  <div className={`relative flex items-center justify-start md:justify-between w-full group ${isEven ? "md:flex-row-reverse" : "md:flex-row"
+                    }`}>
+
                     {/* Empty Space for alternate side on Desktop */}
                     <div className="hidden md:block w-5/12"></div>
 
@@ -202,18 +336,16 @@ export default function PathPage() {
 
                     {/* Content Card */}
                     <div className="w-full pl-16 sm:pl-20 md:pl-0 md:w-5/12">
-                      <div className={`p-6 rounded-2xl border transition-all duration-300 ${
-                        isCurrent 
-                          ? "bg-primary/5 border-primary shadow-[0_0_30px_rgba(242,169,59,0.15)] hover:bg-primary/10 hover:-translate-y-1" 
-                          : isLocked 
-                            ? "bg-surface/30 border-hairline hover:bg-surface/50" 
-                            : "bg-green-500/5 border-green-500/30 hover:bg-green-500/10"
-                      }`}>
-                        
+                      <div className={`p-6 rounded-2xl border transition-all duration-300 ${isCurrent
+                        ? "bg-primary/5 border-primary shadow-[0_0_30px_rgba(242,169,59,0.15)] hover:bg-primary/10 hover:-translate-y-1"
+                        : isLocked
+                          ? "bg-surface/30 border-hairline hover:bg-surface/50"
+                          : "bg-green-500/5 border-green-500/30 hover:bg-green-500/10"
+                        }`}>
+
                         <div className="flex items-center gap-2 mb-3">
-                          <p className={`text-xs font-bold uppercase tracking-wider ${
-                            isCurrent ? 'text-primary' : isLocked ? 'text-muted/60' : 'text-green-500'
-                          }`}>
+                          <p className={`text-xs font-bold uppercase tracking-wider ${isCurrent ? 'text-primary' : isLocked ? 'text-muted/60' : 'text-green-500'
+                            }`}>
                             {isCurrent ? "Next Up" : isLocked ? "Locked" : "Completed"}
                           </p>
                           <span className="text-muted/30 text-xs">•</span>
@@ -221,7 +353,7 @@ export default function PathPage() {
                             {mod.estimatedDuration || "30 mins"}
                           </p>
                         </div>
-                        
+
                         {isCurrent ? (
                           <Link href={`/lesson/${mod.id}`} className="block focus:outline-none">
                             <h3 className="text-xl font-bold text-high mb-2 hover:text-primary transition-colors">
@@ -233,7 +365,7 @@ export default function PathPage() {
                             {mod.title}
                           </h3>
                         )}
-                        
+
                         <p className={`text-sm leading-relaxed ${isLocked ? 'text-muted/70' : 'text-mid'}`}>
                           {mod.angle}
                         </p>
@@ -267,7 +399,7 @@ export default function PathPage() {
             {/* Certificate Goal Node */}
             {modules.length > 0 && (
               <div className="relative mt-24 flex flex-col md:items-center pt-4 md:pt-16">
-                
+
                 {/* Goal Icon */}
                 <div className="absolute top-0 left-0 sm:left-6 md:left-1/2 w-12 h-12 transform -translate-x-0 sm:-translate-x-1/2 flex items-center justify-center z-10">
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-[0_0_40px_rgba(234,179,8,0.5)] flex items-center justify-center border-4 border-background z-20">
@@ -281,17 +413,17 @@ export default function PathPage() {
                 <div className="w-full pl-16 sm:pl-20 md:pl-0 md:max-w-lg md:mx-auto z-10">
                   <div className="p-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/5 shadow-[0_0_30px_rgba(234,179,8,0.1)] relative overflow-hidden md:text-center backdrop-blur-md">
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-yellow-500/20 rounded-full blur-[50px]"></div>
-                    
+
                     <div className="flex items-center md:justify-center gap-2 mb-3 relative z-10">
                       <p className="text-xs font-bold uppercase tracking-wider text-yellow-500">
                         Final Goal
                       </p>
                     </div>
-                    
+
                     <h3 className="text-2xl font-bold text-high mb-3 relative z-10">
                       {profile.skillToLearn} Certification
                     </h3>
-                    
+
                     <p className="text-sm leading-relaxed text-yellow-500/80 relative z-10 font-medium">
                       Complete all modules to unlock your personalized certificate of mastery.
                     </p>
