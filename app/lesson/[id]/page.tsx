@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { LearnerProfile, CurriculumModule, LessonContent } from "@/services/ai/client";
 import { playCorrectSound, playIncorrectSound, playCelebrationSound } from "@/utils/sounds";
 import { createClient } from "@/utils/supabase/client";
@@ -18,7 +19,7 @@ export default function LessonPage() {
   
   const [lessonContent, setLessonContent] = useState<LessonContent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [hasError, setHasError] = useState(false);
 
   // Quiz state
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
@@ -34,7 +35,7 @@ export default function LessonPage() {
 
   const fetchLesson = async (p: LearnerProfile, m: CurriculumModule) => {
     setIsLoading(true);
-    setErrorMsg("");
+    setHasError(false);
     try {
       // 1. Fetch from API (which will check DB, then AI)
       const res = await fetch("/api/lesson", {
@@ -49,7 +50,8 @@ export default function LessonPage() {
       setLessonContent(data);
     } catch (error: unknown) {
       console.error(error);
-      setErrorMsg("Failed to generate lesson. Please try again.");
+      setHasError(true);
+      toast.error("Failed to generate lesson. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -287,7 +289,7 @@ export default function LessonPage() {
         </div>
 
         <div className="max-w-3xl mx-auto px-6 py-12 pb-32">
-          {errorMsg && (
+          {hasError && (
             <div className="mb-8 rounded-xl bg-red-500/10 border border-red-500/20 p-6 text-center shadow-lg">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-500/20 text-red-500 mb-4">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -295,7 +297,7 @@ export default function LessonPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-bold text-red-500 mb-2">Generation Failed</h3>
-              <p className="text-sm text-red-400 mb-6 max-w-md mx-auto">{errorMsg}</p>
+              <p className="text-sm text-red-400 mb-6 max-w-md mx-auto">We couldn't load the lesson content.</p>
               <button 
                 onClick={() => fetchLesson(profile, activeModule)}
                 className="inline-flex items-center gap-2 px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-full shadow-lg shadow-red-500/25 transition-all active:scale-95"

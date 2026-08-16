@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/utils/supabase/client";
 import { logout } from "@/app/(auth)/actions";
+import { TestChatbot } from "@/components/TestChatbot";
 
 export interface UserProfile {
   id: string;
@@ -153,6 +154,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {children}
       </main>
+      <TestChatbot />
     </div>
   );
 }

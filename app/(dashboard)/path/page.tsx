@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LearnerProfile, CurriculumModule } from "@/services/ai/client";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
 
 function PathContent() {
   const router = useRouter();
@@ -13,8 +14,6 @@ function PathContent() {
   const [modules, setModules] = useState<CurriculumModule[]>([]);
   const [allPaths, setAllPaths] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1 });
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState("Analyzing your skills...");
@@ -124,10 +123,9 @@ function PathContent() {
         }
 
         setModules(data);
-      } catch (err: unknown) {
+      } catch (err: any) {
         console.error("Error loading curriculum:", err);
-        const error = err as Error;
-        setErrorMsg(error.message || "Failed to load curriculum.");
+        toast.error("Failed to load curriculum. Please refresh.");
       } finally {
         setIsLoading(false);
       }
@@ -138,9 +136,6 @@ function PathContent() {
 
   useEffect(() => {
     if (profile && profile.id) {
-      supabase.from('profiles').select('total_xp, current_level').eq('id', profile.id as string).single().then(({ data }) => {
-        if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
-      });
       supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id as string).then(({ data }) => {
         if (data) {
           setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: p.stars_earned || 0 }), {} as Record<string, number>));
@@ -283,12 +278,6 @@ function PathContent() {
     <main className="min-h-screen bg-background px-4 sm:px-6 pt-24 pb-32 overflow-x-hidden">
       <div className="mx-auto max-w-5xl">
 
-        {errorMsg && (
-          <div className="mb-6 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-500 text-center shadow-lg backdrop-blur-md">
-            {errorMsg}
-          </div>
-        )}
-
         {/* Breadcrumb UI */}
         <div className="mb-8 text-sm font-medium text-muted animate-fade-in flex items-center gap-2">
           <Link href="/path" className="hover:text-primary transition-colors flex items-center gap-1">
@@ -307,13 +296,10 @@ function PathContent() {
 
           <div className="flex flex-wrap justify-center gap-3 mb-8">
             <span className="px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border border-primary/20 rounded-full">
-              Timeline: {profile.timeline}
+              {modules.length} Modules
             </span>
             <span className="px-4 py-1.5 text-sm font-medium bg-white/5 text-mid border border-hairline rounded-full">
-              Level {liveStats.currentLevel}
-            </span>
-            <span className="px-4 py-1.5 text-sm font-medium bg-white/5 text-mid border border-hairline rounded-full">
-              {liveStats.totalXp} XP
+              {modules.length > 0 ? Math.round((modules.filter(m => m.status === 'complete').length / modules.length) * 100) : 0}% Completed
             </span>
           </div>
 

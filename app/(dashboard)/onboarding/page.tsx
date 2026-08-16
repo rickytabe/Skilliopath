@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
 
 const SUGGESTED_CAREERS = [
   "Marketing",
@@ -27,7 +28,6 @@ export default function OnboardingPage() {
   const [currentLevel, setCurrentLevel] = useState("Beginner");
   const [timeline, setTimeline] = useState("1 month");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -55,11 +55,13 @@ export default function OnboardingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!skillToLearn.trim()) return;
+    if (!skillToLearn.trim()) {
+      toast.error("Please enter a skill you want to learn.");
+      return;
+    }
     if (!savedProfile && (!name.trim() || !currentCareer.trim())) return;
 
     setIsSubmitting(true);
-    setErrorMsg("");
 
     try {
       let profileId = savedProfile?.id;
@@ -83,8 +85,10 @@ export default function OnboardingPage() {
       }
 
       router.push(`/diagnostic?skillToLearn=${encodeURIComponent(skillToLearn.trim())}&currentLevel=${encodeURIComponent(currentLevel)}&timeline=${encodeURIComponent(timeline)}`);
-    } catch (error) {
-      setErrorMsg("Something went wrong. Please try again.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -120,12 +124,6 @@ export default function OnboardingPage() {
               {savedProfile ? "What new skill do you want to master today?" : "Tell us what you want to achieve."}
             </p>
           </div>
-
-          {errorMsg && (
-            <div className="mb-6 rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-500 text-center">
-              {errorMsg}
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {!savedProfile && (

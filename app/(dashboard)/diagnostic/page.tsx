@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { toast } from "sonner";
 
 interface Message {
   role: "user" | "model";
@@ -19,11 +20,8 @@ export default function DiagnosticPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const initialFetchDone = useRef(false);
 
-  const [errorMsg, setErrorMsg] = useState("");
-
   const fetchNextQuestion = async (data: Record<string, string>, history: Message[]) => {
     setIsLoading(true);
-    setErrorMsg("");
     setLoadingState("Reading your answers...");
     
     try {
@@ -46,7 +44,7 @@ export default function DiagnosticPage() {
     } catch (error: unknown) {
       console.error("Error fetching chat:", error);
       const err = error as Error;
-      setErrorMsg(err.message || "Failed to connect to AI.");
+      toast.error(err.message || "Failed to connect to AI.");
     } finally {
       setIsLoading(false);
     }
@@ -94,11 +92,10 @@ export default function DiagnosticPage() {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isLoading, errorMsg]);
+  }, [messages, isLoading]);
 
   const generateProfile = async (data: Record<string, string>, history: Message[]) => {
     setIsLoading(true);
-    setErrorMsg("");
     setLoadingState("Building your path...");
     
     try {
@@ -121,7 +118,7 @@ export default function DiagnosticPage() {
     } catch (error: unknown) {
       console.error("Error generating profile:", error);
       const err = error as Error;
-      setErrorMsg(err.message || "Failed to generate your path.");
+      toast.error(err.message || "Failed to generate your path.");
       setIsLoading(false);
     }
   };
@@ -159,14 +156,6 @@ export default function DiagnosticPage() {
 
         {/* Chat Area */}
         <div className="flex-1 overflow-y-auto mb-6 space-y-6 scrollbar-hide pb-4 relative">
-          {errorMsg && (
-            <div className="sticky top-0 z-10 w-full animate-fade-in-up">
-              <div className="mx-auto max-w-[85%] rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-500 text-center shadow-lg backdrop-blur-md">
-                {errorMsg}
-              </div>
-            </div>
-          )}
-
           {messages.map((msg, idx) => (
             <div
               key={idx}

@@ -1,5 +1,4 @@
 import { ai, MODEL_NAME, LearnerProfile, CurriculumModule } from "./client";
-import { Type } from "@google/genai";
 
 export async function generateCurriculum(profile: LearnerProfile): Promise<CurriculumModule[]> {
   let exactDays = 15;
@@ -27,36 +26,36 @@ Requirements:
 4. Estimate a duration for each module (e.g., "1 hour", "30 mins").
 5. Provide a timingLabel for each module that indicates its position in the timeline (e.g., "Week 1 - Day 1", "Week 1 - Day 2"). The last module must be labeled Day ${exactDays}.
 6. CRITICAL: Do NOT generate duplicate or nearly identical modules. Every single module MUST teach a distinct, unique concept. Do not repeat the same topic across multiple days.
+
+You MUST return your response as a valid JSON object strictly matching this schema:
+{
+  "modules": [
+    {
+      "id": "string (unique identifier)",
+      "title": "string",
+      "angle": "string",
+      "estimatedDuration": "string",
+      "timingLabel": "string",
+      "order": 1,
+      "status": "locked"
+    }
+  ]
+}
 `;
 
-  const response = await ai.models.generateContent({
+  const response = await ai.chat.completions.create({
     model: MODEL_NAME,
-    contents: prompt,
-    config: {
-      temperature: 0.7,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            id: { type: Type.STRING },
-            title: { type: Type.STRING },
-            angle: { type: Type.STRING },
-            estimatedDuration: { type: Type.STRING },
-            timingLabel: { type: Type.STRING },
-            order: { type: Type.INTEGER },
-            status: { type: Type.STRING }, // "locked" | "current" | "complete"
-          },
-          required: ["id", "title", "angle", "estimatedDuration", "timingLabel", "order", "status"],
-        },
-      },
-    },
+    messages: [{ role: "system", content: prompt }],
+    temperature: 0.7,
+    response_format: { type: "json_object" },
   });
 
-  if (!response.text) {
+  const text = response.choices[0]?.message?.content;
+
+  if (!text) {
     throw new Error("Failed to generate curriculum");
   }
 
-  return JSON.parse(response.text) as CurriculumModule[];
+  const parsed = JSON.parse(text);
+  return parsed.modules as CurriculumModule[];
 }

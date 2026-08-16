@@ -1,5 +1,4 @@
 import { ai, MODEL_NAME, LearnerProfile, CurriculumModule, LessonContent } from "./client";
-import { Type } from "@google/genai";
 
 export async function generateLesson(
   module: CurriculumModule,
@@ -25,45 +24,36 @@ Instructions:
 4. Generate exactly 7 short, multiple-choice quiz questions based on your explanation to thoroughly check their knowledge.
 5. Provide specific, tailored feedback strings for both correct and incorrect answers (do NOT use generic "Good job!" or "Try again!"). Explain WHY they are right or wrong based on the concept.
 
-Output the result as JSON matching the LessonContent schema.
+You MUST return your response as a valid JSON object strictly matching this schema:
+{
+  "moduleId": "string",
+  "explanation": "string",
+  "quiz": [
+    {
+      "question": "string",
+      "options": ["string", "string", "string", "string"],
+      "correctIndex": 0,
+      "feedbackCorrect": "string",
+      "feedbackIncorrect": "string"
+    }
+  ]
+}
 `;
 
-  const response = await ai.models.generateContent({
+  const response = await ai.chat.completions.create({
     model: MODEL_NAME,
-    contents: prompt,
-    config: {
-      temperature: 0.7,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          moduleId: { type: Type.STRING },
-          explanation: { type: Type.STRING },
-          quiz: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                question: { type: Type.STRING },
-                options: { type: Type.ARRAY, items: { type: Type.STRING } },
-                correctIndex: { type: Type.INTEGER },
-                feedbackCorrect: { type: Type.STRING },
-                feedbackIncorrect: { type: Type.STRING },
-              },
-              required: ["question", "options", "correctIndex", "feedbackCorrect", "feedbackIncorrect"],
-            },
-          },
-        },
-        required: ["moduleId", "explanation", "quiz"],
-      },
-    },
+    messages: [{ role: "system", content: prompt }],
+    temperature: 0.7,
+    response_format: { type: "json_object" },
   });
 
-  if (!response.text) {
+  const text = response.choices[0]?.message?.content;
+
+  if (!text) {
     throw new Error("Failed to generate lesson");
   }
 
-  let rawText = response.text;
+  let rawText = text;
   if (rawText.startsWith("```json")) {
     rawText = rawText.replace(/^```json\n?/, "").replace(/\n?```$/, "");
   } else if (rawText.startsWith("```")) {

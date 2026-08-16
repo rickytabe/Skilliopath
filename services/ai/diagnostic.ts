@@ -1,5 +1,4 @@
 import { ai, MODEL_NAME, LearnerProfile } from "./client";
-import { Type } from "@google/genai";
 
 export async function generateProfile(
   history: { role: string; content: string }[],
@@ -16,50 +15,48 @@ Their current level is: ${currentLevel}.
 Based on the conversation history, extract their profile.
 1. Refine and formalize their desired skill into a professional, concise course title (e.g., if they say "i wanna learn react", the \`skillToLearn\` should be "React Development"). Do not just repeat their raw text.
 2. Extract exactly 3 specific, highly relevant digital skill gaps they need to work on. 
-Determine the best teaching tone for them based on their communication style (e.g., "encouraging and practical", "direct and analytical").
+3. Determine the best teaching tone for them based on their communication style (e.g., "encouraging and practical", "direct and analytical").
+
+You MUST return your response as a valid JSON object strictly matching this schema:
+{
+  "name": "string",
+  "currentCareer": "string",
+  "skillToLearn": "string",
+  "currentLevel": "string",
+  "timeline": "string",
+  "skillGaps": ["string", "string", "string"],
+  "tone": "string"
+}
 `;
 
-  const contents: { role: string; parts: { text: string }[] }[] = [
-    { role: "user", parts: [{ text: prompt }] }
+  const messages: any[] = [
+    { role: "system", content: prompt }
   ];
 
   for (const msg of history) {
-    contents.push({
-      role: msg.role === "model" ? "model" : "user",
-      parts: [{ text: msg.content }],
+    messages.push({
+      role: msg.role === "model" ? "assistant" : "user",
+      content: msg.content,
     });
   }
 
-  contents.push({
+  messages.push({
     role: "user",
-    parts: [{ text: "Extract the LearnerProfile JSON now. No prose." }]
+    content: "Extract the LearnerProfile JSON now. No prose."
   });
 
-  const response = await ai.models.generateContent({
+  const response = await ai.chat.completions.create({
     model: MODEL_NAME,
-    contents,
-    config: {
-      temperature: 0.2,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING },
-          currentCareer: { type: Type.STRING },
-          skillToLearn: { type: Type.STRING },
-          currentLevel: { type: Type.STRING },
-          timeline: { type: Type.STRING },
-          skillGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-          tone: { type: Type.STRING },
-        },
-        required: ["name", "currentCareer", "skillToLearn", "currentLevel", "timeline", "skillGaps", "tone"],
-      },
-    },
+    messages,
+    temperature: 0.2,
+    response_format: { type: "json_object" },
   });
 
-  if (!response.text) {
+  const text = response.choices[0]?.message?.content;
+
+  if (!text) {
     throw new Error("Failed to generate profile");
   }
 
-  return JSON.parse(response.text) as LearnerProfile;
+  return JSON.parse(text) as LearnerProfile;
 }

@@ -52,6 +52,36 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
     </svg>
   ),
+  code: (
+    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+    </svg>
+  ),
+  microphone: (
+    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+    </svg>
+  ),
+  globe: (
+    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.974 0-5.699-.542-8.162-1.48" />
+    </svg>
+  ),
+  video: (
+    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  ),
+  phone: (
+    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.896-1.596-5.25-3.95-6.847-6.847l1.293-.97c.362-.271.527-.733.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+    </svg>
+  ),
+  wrench: (
+    <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
 };
 
 // Map skill IDs to their icons and color schemes
@@ -65,6 +95,12 @@ const SKILL_META: Record<string, { icon: React.ReactNode; color: string; iconCol
   "prompt-engineering":  { icon: Icons.bolt,    color: "from-amber-500/15 to-amber-600/5",    iconColor: "text-amber-600" },
   "copywriting":        { icon: Icons.pencil,   color: "from-indigo-500/15 to-indigo-600/5",  iconColor: "text-indigo-600" },
   "ugc-creation":       { icon: Icons.camera,   color: "from-teal-500/15 to-teal-600/5",     iconColor: "text-teal-600" },
+  "frontend-dev":       { icon: Icons.code,     color: "from-cyan-500/15 to-cyan-600/5",      iconColor: "text-cyan-600" },
+  "digital-marketing":  { icon: Icons.microphone, color: "from-fuchsia-500/15 to-fuchsia-600/5", iconColor: "text-fuchsia-600" },
+  "seo-specialist":     { icon: Icons.globe,    color: "from-lime-500/15 to-lime-600/5",      iconColor: "text-lime-600" },
+  "video-editing":      { icon: Icons.video,    color: "from-rose-500/15 to-rose-600/5",      iconColor: "text-rose-600" },
+  "tech-sales":         { icon: Icons.phone,    color: "from-green-500/15 to-green-600/5",    iconColor: "text-green-600" },
+  "it-support":         { icon: Icons.wrench,   color: "from-slate-500/15 to-slate-600/5",    iconColor: "text-slate-600" },
 };
 
 interface MarketSkill {

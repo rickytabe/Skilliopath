@@ -1,10 +1,11 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import OpenAI from "openai";
 
-export const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY || "",
+export const ai = new OpenAI({
+  apiKey: process.env.NEXT_PUBLIC_NVIDIA_API_KEY || "",
+  baseURL: "https://integrate.api.nvidia.com/v1",
 });
 
-export const MODEL_NAME = "gemini-2.5-flash";
+export const MODEL_NAME = "nvidia/llama-3.3-nemotron-super-49b-v1.5";
 
 // ── Data Contracts ────────────────────────────────────────
 

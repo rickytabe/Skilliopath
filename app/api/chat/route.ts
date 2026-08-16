@@ -28,32 +28,32 @@ Rules:
 5. Speak in plain, extremely simple English. Do not use complex industry jargon, abstract concepts, or big words. If you must refer to a technical concept, explain it in layperson terms (e.g., instead of "digital marketing channels," say "places online like Facebook or Google where people find you").
 `;
 
-    const contents: { role: string; parts: { text: string }[] }[] = [
-      { role: "user", parts: [{ text: prompt }] },
+    const messages: any[] = [
+      { role: "system", content: prompt },
     ];
 
     if (history && Array.isArray(history)) {
       for (const msg of history) {
-        contents.push({
-          role: msg.role === "model" ? "model" : "user",
-          parts: [{ text: msg.content }],
+        messages.push({
+          role: msg.role === "model" ? "assistant" : "user",
+          content: msg.content,
         });
       }
     }
 
-    const response = await ai.models.generateContent({
+    const response = await ai.chat.completions.create({
       model: MODEL_NAME,
-      contents,
-      config: {
-        temperature: 0.7,
-      },
+      messages,
+      temperature: 0.7,
     });
 
-    if (!response.text) {
+    const text = response.choices[0]?.message?.content;
+
+    if (!text) {
       throw new Error("Empty response from AI");
     }
 
-    return NextResponse.json({ text: response.text });
+    return NextResponse.json({ text });
   } catch (error: any) {
     console.error("Error in /api/chat:", error);
     
