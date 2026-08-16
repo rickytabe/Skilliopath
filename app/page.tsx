@@ -466,6 +466,89 @@ export default function Home() {
         </div>
       </section>
 
+            {/* CAREER MARKET PREVIEW                                */}
+            <section className="py-20 lg:py-28 bg-base border-t border-hairline">
+        <div className="w-full px-8 lg:px-16 xl:px-24">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="max-w-3xl mx-auto text-center mb-16 space-y-4">
+            <p className="text-primary font-bold tracking-widest text-xs uppercase">Career Intelligence</p>
+            <h2 className="text-3xl md:text-4xl font-bold font-display tracking-tight text-high">
+              High-Paying Skills in <span className="text-primary">Today&apos;s Market</span>
+            </h2>
+            <p className="text-lg text-mid">
+              Real salary data. Real job demand. See exactly which skills are worth your time and investment.
+            </p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1 }} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {[
+              { title: "Artificial Intelligence & ML", salary: "$145k", jobs: "45k+", learners: "45,210", rating: 4.9, growth: "+35% YoY", icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>, color: "text-purple-600", bg: "bg-purple-50" },
+              { title: "Cloud Computing & DevOps", salary: "$130k", jobs: "32k+", learners: "32,150", rating: 4.8, growth: "+18% YoY", icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" /></svg>, color: "text-blue-600", bg: "bg-blue-50" },
+              { title: "Cybersecurity & InfoSec", salary: "$120k", jobs: "28k+", learners: "28,400", rating: 4.9, growth: "+28% YoY", icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>, color: "text-red-600", bg: "bg-red-50" },
+              { title: "Data Science & Analytics", salary: "$115k", jobs: "52k+", learners: "52,800", rating: 4.7, growth: "+15% YoY", icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>, color: "text-emerald-600", bg: "bg-emerald-50" },
+              { title: "Prompt Engineering", salary: "$105k", jobs: "15k+", learners: "15,600", rating: 4.6, growth: "+85% YoY", icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>, color: "text-amber-600", bg: "bg-amber-50" },
+              { title: "UX/UI Design", salary: "$95k", jobs: "38k+", learners: "38,900", rating: 4.9, growth: "+12% YoY", icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42" /></svg>, color: "text-pink-600", bg: "bg-pink-50" },
+            ].map((skill, i) => (
+              <motion.div
+                key={skill.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.05 * i }}
+                className="group bg-white border border-hairline rounded-2xl p-6 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 transition-all duration-500 flex flex-col"
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-5">
+                  <div className={`w-11 h-11 rounded-xl ${skill.bg} flex items-center justify-center ${skill.color}`}>
+                    {skill.icon}
+                  </div>
+                  <h3 className="text-base font-bold text-high leading-tight group-hover:text-primary transition-colors">{skill.title}</h3>
+                </div>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-2 gap-3 mb-5 flex-1">
+                  <div className="bg-base rounded-xl p-3">
+                    <p className="text-[10px] uppercase font-bold text-muted tracking-widest mb-1">Avg. Salary</p>
+                    <p className="text-lg font-black text-high">{skill.salary}</p>
+                  </div>
+                  <div className="bg-base rounded-xl p-3">
+                    <p className="text-[10px] uppercase font-bold text-muted tracking-widest mb-1">Open Jobs</p>
+                    <p className="text-lg font-black text-high">{skill.jobs}</p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between border-t border-hairline pt-4">
+                  <div className="flex items-center gap-3 text-xs text-muted">
+                    <span className="flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5 text-primary" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                      <span className="font-bold text-high">{skill.rating}</span>
+                    </span>
+                    <span className="text-green-600 font-bold">{skill.growth}</span>
+                  </div>
+                  <Link
+                    href={isAuthenticated ? `/onboarding?skill=${encodeURIComponent(skill.title)}` : `/signup`}
+                    className="text-xs font-bold text-primary hover:underline"
+                  >
+                    Start Learning →
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* CTA */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.3 }} className="text-center mt-12">
+            <Link
+              href={ctaHref}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-high text-white font-bold rounded-xl hover:bg-primary transition-colors shadow-lg hover:shadow-xl"
+            >
+              Explore All Skills in Career Market
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
             {/* 3. FEATURES AND BENEFITS SECTION                     */}
             <section id="features" className="py-20 lg:py-28 bg-base">
         <div className="w-full px-8 lg:px-16 xl:px-24">

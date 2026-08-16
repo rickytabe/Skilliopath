@@ -67,11 +67,18 @@ export async function POST(req: Request) {
       }));
 
     return NextResponse.json(dbCurriculum);
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error("Error in /api/curriculum:", error);
-    const err = error as Error;
+    
+    if (error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("Quota")) {
+      return NextResponse.json(
+        { error: "AI API rate limit exceeded. Please wait a minute and try again." },
+        { status: 429 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: err.message || "Failed to generate curriculum" },
+      { error: error?.message || "Failed to generate curriculum" },
       { status: 500 }
     );
   }

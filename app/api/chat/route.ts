@@ -54,10 +54,18 @@ Rules:
     }
 
     return NextResponse.json({ text: response.text });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in /api/chat:", error);
+    
+    if (error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("Quota")) {
+      return NextResponse.json(
+        { error: "AI API rate limit exceeded. Please wait a minute and try again." },
+        { status: 429 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Failed to generate chat response" },
+      { error: error?.message || "Failed to generate chat response" },
       { status: 500 }
     );
   }

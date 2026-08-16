@@ -34,10 +34,18 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ...profile, id: profileId, pathId: dbPath.id });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in /api/diagnostic:", error);
+
+    if (error?.status === 429 || error?.message?.includes("429") || error?.message?.includes("Quota")) {
+      return NextResponse.json(
+        { error: "AI API rate limit exceeded. Please wait a minute and try again." },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to generate diagnostic profile" },
+      { error: error?.message || "Failed to generate diagnostic profile" },
       { status: 500 }
     );
   }

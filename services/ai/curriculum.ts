@@ -2,6 +2,12 @@ import { ai, MODEL_NAME, LearnerProfile, CurriculumModule } from "./client";
 import { Type } from "@google/genai";
 
 export async function generateCurriculum(profile: LearnerProfile): Promise<CurriculumModule[]> {
+  let exactDays = 15;
+  if (profile.timeline === "1 week") exactDays = 7;
+  else if (profile.timeline === "2 weeks") exactDays = 14;
+  else if (profile.timeline === "1 month") exactDays = 30;
+  else if (profile.timeline === "3 months") exactDays = 60; // 5 days/week for 12 weeks
+
   const prompt = `
 You are an expert curriculum designer.
 Create a micro-curriculum for a user with the following profile:
@@ -13,13 +19,13 @@ Total Timeline: ${profile.timeline}
 Skill Gaps to Address: ${profile.skillGaps.join(", ")}
 Preferred Tone: ${profile.tone}
 
-Generate exactly 15 to 25 highly granular, bite-sized curriculum modules that fit within the ${profile.timeline} timeline. Break it down day-by-day.
+Generate EXACTLY ${exactDays} highly granular, bite-sized curriculum modules. This must be a day-by-day curriculum spanning exactly ${exactDays} days.
 Requirements:
 1. Order them logically from foundational (basics) to applied (advanced).
 2. Keep titles in plain, engaging language (no generic "Module 1:").
 3. Determine a specific "angle" for each module. Do NOT use complex technical analogies or forced jargon. Keep it incredibly simple, relatable, and easy to digest using long-lasting words.
 4. Estimate a duration for each module (e.g., "1 hour", "30 mins").
-5. Provide a timingLabel for each module that indicates its position in the timeline (e.g., "Week 1 - Day 1", "Week 1 - Day 2"). This acts as a visual group label.
+5. Provide a timingLabel for each module that indicates its position in the timeline (e.g., "Week 1 - Day 1", "Week 1 - Day 2"). The last module must be labeled Day ${exactDays}.
 6. CRITICAL: Do NOT generate duplicate or nearly identical modules. Every single module MUST teach a distinct, unique concept. Do not repeat the same topic across multiple days.
 `;
 

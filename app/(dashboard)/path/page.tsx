@@ -1,22 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { LearnerProfile, CurriculumModule } from "@/services/ai/client";
 import { createClient } from "@/utils/supabase/client";
 
-export default function PathPage() {
+function PathContent() {
   const router = useRouter();
   const supabase = createClient();
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [modules, setModules] = useState<CurriculumModule[]>([]);
+  const [allPaths, setAllPaths] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1 });
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState("Analyzing your skills...");
+  
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!isLoading) return;
@@ -39,7 +42,6 @@ export default function PathPage() {
   useEffect(() => {
     async function loadOrGenerate() {
       try {
-        const searchParams = new URLSearchParams(window.location.search);
         let pathId = searchParams.get('id');
         
         const { data: { user } } = await supabase.auth.getUser();
@@ -48,14 +50,20 @@ export default function PathPage() {
           return;
         }
 
+        const { data: pathsData } = await supabase
+          .from('learning_paths')
+          .select('*')
+          .eq('profile_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (pathsData) {
+          setAllPaths(pathsData);
+        }
+
         let pathData;
         if (pathId) {
            const { data } = await supabase.from('learning_paths').select('*').eq('id', pathId).single();
            pathData = data;
-        } else {
-           const { data } = await supabase.from('learning_paths').select('*').eq('profile_id', user.id).order('created_at', { ascending: false }).limit(1).single();
-           pathData = data;
-           if (pathData) pathId = pathData.id;
         }
 
         if (!pathData) {
@@ -126,7 +134,7 @@ export default function PathPage() {
     }
 
     loadOrGenerate();
-  }, [router]);
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (profile && profile.id) {
@@ -191,6 +199,36 @@ export default function PathPage() {
   }
 
   if (!profile) {
+    if (allPaths.length > 0) {
+      return (
+        <main className="min-h-screen bg-background px-4 sm:px-6 pt-24 pb-32">
+          <div className="mx-auto max-w-5xl animate-fade-in-up">
+            <h1 className="text-3xl sm:text-4xl font-bold font-display text-high mb-8">My Learning Paths</h1>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+               {allPaths.map((path) => (
+                  <Link key={path.id} href={`/path?id=${path.id}`} className="bg-white border border-hairline p-6 rounded-2xl flex flex-col justify-between hover:border-primary/60 transition-all duration-200 group shadow-sm hover:shadow-md cursor-pointer">
+                     <div className="mb-6">
+                        <h4 className="font-bold text-lg text-high mb-2 group-hover:text-primary transition-colors line-clamp-2">{path.skill_to_learn}</h4>
+                        <div className="flex items-center gap-2 text-xs text-muted font-medium">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Started {new Date(path.created_at).toLocaleDateString()}
+                        </div>
+                     </div>
+                     <div className="flex items-center pt-4 border-t border-hairline">
+                        <span className="text-sm font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                           Continue <span aria-hidden="true">&rarr;</span>
+                        </span>
+                     </div>
+                  </Link>
+               ))}
+            </div>
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
         <div className="w-full max-w-md flex flex-col items-center gap-6 text-center bg-white p-10 rounded-3xl border border-hairline shadow-sm">
@@ -250,6 +288,16 @@ export default function PathPage() {
             {errorMsg}
           </div>
         )}
+
+        {/* Breadcrumb UI */}
+        <div className="mb-8 text-sm font-medium text-muted animate-fade-in flex items-center gap-2">
+          <Link href="/path" className="hover:text-primary transition-colors flex items-center gap-1">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            Paths
+          </Link>
+          <span className="text-hairline">/</span>
+          <span className="text-high">{profile.skillToLearn}</span>
+        </div>
 
         {/* Header Summary */}
         <div className="mb-20 text-center animate-fade-in-up">
@@ -440,5 +488,20 @@ export default function PathPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function PathPage() {
+  return (
+    <Suspense fallback={
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6">
+        <div className="animate-pulse flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-surface" />
+          <div className="h-4 w-32 bg-surface rounded-lg" />
+        </div>
+      </main>
+    }>
+      <PathContent />
+    </Suspense>
   );
 }
