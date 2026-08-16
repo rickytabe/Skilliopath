@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { LearnerProfile, CurriculumModule, LessonContent } from "@/services/ai/client";
 import { playCorrectSound, playIncorrectSound, playCelebrationSound } from "@/utils/sounds";
+import { createClient } from "@/utils/supabase/client";
 
 export default function LessonPage() {
   const router = useRouter();
@@ -35,15 +36,7 @@ export default function LessonPage() {
     setIsLoading(true);
     setErrorMsg("");
     try {
-      // 1. Check frontend cache first for instant load
-      const cachedLesson = sessionStorage.getItem(`skilliopath_lesson_${m.id}`);
-      if (cachedLesson) {
-        setLessonContent(JSON.parse(cachedLesson));
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Otherwise fetch from API (which will check DB, then AI)
+      // 1. Fetch from API (which will check DB, then AI)
       const res = await fetch("/api/lesson", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,9 +46,6 @@ export default function LessonPage() {
       if (!res.ok) throw new Error("Failed to fetch lesson");
       
       const data = await res.json();
-      
-      // 3. Save to frontend cache for next time
-      sessionStorage.setItem(`skilliopath_lesson_${m.id}`, JSON.stringify(data));
       setLessonContent(data);
     } catch (error: unknown) {
       console.error(error);
@@ -66,37 +56,76 @@ export default function LessonPage() {
   };
 
   useEffect(() => {
-    try {
-      const savedProfile = sessionStorage.getItem("skilliopath_profile");
-      const savedCurriculum = sessionStorage.getItem("skilliopath_curriculum");
-      
-      if (!savedProfile || !savedCurriculum) {
-        router.push("/path");
-        return;
-      }
-      
-      const parsedProfile = JSON.parse(savedProfile) as LearnerProfile;
-      const parsedCurriculum = JSON.parse(savedCurriculum) as CurriculumModule[];
-      
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setProfile(parsedProfile);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurriculum(parsedCurriculum);
+    async function loadData() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push("/login");
+          return;
+        }
 
-      const mod = parsedCurriculum.find(m => m.id === lessonId);
-      if (!mod) {
-        router.push("/path");
-        return;
-      }
-      
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setActiveModule(mod);
-      fetchLesson(parsedProfile, mod);
+        const { data: moduleData } = await supabase
+          .from("curriculum_modules")
+          .select("*, learning_paths(*)")
+          .eq("id", lessonId)
+          .single();
 
-    } catch (err) {
-      console.error(err);
-      router.push("/path");
+        if (!moduleData) {
+          router.push("/path");
+          return;
+        }
+
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        const profileObj = {
+          id: user.id,
+          name: userProfile?.name || "Learner",
+          currentCareer: userProfile?.current_career || "Student",
+          skillToLearn: moduleData.learning_paths.skill_to_learn,
+          skillGaps: moduleData.learning_paths.skill_gaps || [],
+        } as LearnerProfile;
+
+        const moduleObj = {
+          id: moduleData.id,
+          title: moduleData.title,
+          angle: moduleData.angle,
+          status: moduleData.status,
+          timingLabel: moduleData.timing_label,
+        } as CurriculumModule;
+        
+        const { data: allModules } = await supabase
+          .from("curriculum_modules")
+          .select("*")
+          .eq("path_id", moduleData.path_id)
+          .order("order_index", { ascending: true });
+        
+        if (allModules) {
+          setCurriculum(allModules.map(m => ({
+            id: m.id,
+            title: m.title,
+            angle: m.angle,
+            status: m.status,
+            timingLabel: m.timing_label,
+          })) as CurriculumModule[]);
+        }
+
+        setProfile(profileObj);
+        setActiveModule(moduleObj);
+        
+        fetchLesson(profileObj, moduleObj);
+      } catch (err) {
+        console.error(err);
+        router.push("/path");
+      }
     }
+
+    loadData();
   }, [lessonId, router]);
 
   useEffect(() => {
@@ -294,11 +323,39 @@ export default function LessonPage() {
           </div>
 
           {isLoading ? (
-            <div className="flex flex-col gap-6 animate-pulse">
-              <div className="h-4 bg-surface rounded w-full"></div>
-              <div className="h-4 bg-surface rounded w-11/12"></div>
-              <div className="h-4 bg-surface rounded w-4/5"></div>
-              <div className="h-32 bg-surface rounded-xl w-full mt-8 border border-hairline"></div>
+            <div className="space-y-10 animate-fade-in">
+              {/* Read aloud button skeleton */}
+              <div className="flex justify-end">
+                <div className="h-9 w-32 bg-surface rounded-full shimmer" />
+              </div>
+              {/* Explanation paragraph skeletons */}
+              <div className="space-y-4">
+                <div className="h-5 w-full bg-surface rounded-lg shimmer" />
+                <div className="h-5 w-11/12 bg-surface rounded-lg shimmer" />
+                <div className="h-5 w-full bg-surface rounded-lg shimmer" />
+                <div className="h-5 w-9/12 bg-surface rounded-lg shimmer" />
+                <div className="h-5 w-full bg-surface rounded-lg shimmer" />
+                <div className="h-5 w-10/12 bg-surface rounded-lg shimmer" />
+                <div className="h-5 w-7/12 bg-surface rounded-lg shimmer" />
+              </div>
+              <hr className="border-hairline" />
+              {/* Quiz section skeleton */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-40 bg-surface rounded-xl shimmer" />
+                  <div className="h-6 w-24 bg-surface rounded-md shimmer" />
+                </div>
+                {[1, 2, 3].map(q => (
+                  <div key={q} className="bg-white border border-hairline rounded-2xl p-6 space-y-4">
+                    <div className="h-5 w-3/4 bg-surface rounded-lg shimmer" />
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map(o => (
+                        <div key={o} className="h-12 w-full bg-surface rounded-xl shimmer" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : lessonContent ? (
             <div className="space-y-16 animate-fade-in-up delay-200">
@@ -462,17 +519,6 @@ export default function LessonPage() {
 
                     <Link 
                       href="/path"
-                      onClick={() => {
-                        const updatedCurriculum = [...curriculum];
-                        const currentIdx = updatedCurriculum.findIndex(m => m.id === lessonId);
-                        if (currentIdx > -1) {
-                          updatedCurriculum[currentIdx].status = "complete";
-                          if (currentIdx + 1 < updatedCurriculum.length) {
-                             updatedCurriculum[currentIdx + 1].status = "current";
-                          }
-                          sessionStorage.setItem("skilliopath_curriculum", JSON.stringify(updatedCurriculum));
-                        }
-                      }}
                       className="block w-full py-4 bg-primary text-background text-sm font-bold rounded-full shadow-[0_0_20px_rgba(242,169,59,0.3)] hover:shadow-[0_0_30px_rgba(242,169,59,0.5)] hover:scale-105 transition-all relative z-10"
                     >
                       Return to Path →

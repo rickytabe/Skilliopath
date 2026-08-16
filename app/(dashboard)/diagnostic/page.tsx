@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 interface Message {
   role: "user" | "model";
@@ -56,19 +57,35 @@ export default function DiagnosticPage() {
     initialFetchDone.current = true;
     
     try {
-      // Load field from onboarding
-      const savedData = sessionStorage.getItem("skilliopath_onboarding");
-      if (!savedData) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const skillToLearn = searchParams.get('skillToLearn');
+      const currentLevel = searchParams.get('currentLevel');
+      const timeline = searchParams.get('timeline');
+      
+      if (!skillToLearn || !currentLevel || !timeline) {
         router.push("/onboarding");
         return;
       }
-      const parsedData = JSON.parse(savedData) as Record<string, string>;
       
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOnboardingData(parsedData);
-      
-      // Fetch first question
-      fetchNextQuestion(parsedData, []);
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) {
+          router.push("/login");
+          return;
+        }
+        supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data: userProfile }) => {
+          const data = {
+            profileId: user.id,
+            name: userProfile?.name || "Learner",
+            currentCareer: userProfile?.current_career || "Student",
+            skillToLearn,
+            currentLevel,
+            timeline
+          };
+          setOnboardingData(data);
+          fetchNextQuestion(data, []);
+        });
+      });
     } catch (err) {
       console.error(err);
       router.push("/onboarding");
@@ -97,7 +114,6 @@ export default function DiagnosticPage() {
       
       const profile = await res.json();
       if (profile && !profile.error) {
-        sessionStorage.setItem("skilliopath_profile", JSON.stringify(profile));
         router.push("/dashboard");
       } else {
         throw new Error(profile.error || "Failed to build profile.");

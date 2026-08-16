@@ -58,6 +58,30 @@ export async function POST(req: Request) {
       throw new Error("Failed to update profile stats");
     }
 
+    // 4. Update module statuses
+    // Fetch the completed module to get its path_id and order_index
+    const { data: completedModule, error: modFetchError } = await supabase
+      .from('curriculum_modules')
+      .select('path_id, order_index')
+      .eq('id', moduleId)
+      .single();
+
+    if (!modFetchError && completedModule) {
+      // Mark current module as complete
+      await supabase
+        .from('curriculum_modules')
+        .update({ status: 'complete' })
+        .eq('id', moduleId);
+
+      // Unlock next module
+      await supabase
+        .from('curriculum_modules')
+        .update({ status: 'current' })
+        .eq('path_id', completedModule.path_id)
+        .eq('order_index', completedModule.order_index + 1)
+        .eq('status', 'locked');
+    }
+
     return NextResponse.json({ success: true, totalXp: newTotalXp, currentLevel: newLevel });
   } catch (error) {
     console.error("Error in /api/progress:", error);

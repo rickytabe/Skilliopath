@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const response = await updateSession(request);
 
   // Check auth status for protected routes
-  const protectedRoutes = ["/dashboard", "/profile", "/path", "/onboarding"];
+  const protectedRoutes = ["/dashboard", "/profile", "/path", "/onboarding", "/market"];
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   );

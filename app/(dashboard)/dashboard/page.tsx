@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LearnerProfile, CurriculumModule } from "@/services/ai/client";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -16,54 +16,105 @@ export default function DashboardPage() {
   const [deleteModalPath, setDeleteModalPath] = useState<any | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    let parsedProfile: any = null;
-    const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
-    if (savedProfileStr) {
-      parsedProfile = JSON.parse(savedProfileStr);
-    } else {
-      const identityStr = localStorage.getItem("skilliopath_profile_identity");
-      if (identityStr) {
-        parsedProfile = JSON.parse(identityStr);
+    async function loadDashboard() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
       }
-    }
 
-    if (parsedProfile) {
-      setProfile(parsedProfile);
+      const { data: userProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       
-      const savedCurriculumStr = sessionStorage.getItem("skilliopath_curriculum");
-      if (savedCurriculumStr) {
-         setModules(JSON.parse(savedCurriculumStr));
+      const profileData = {
+        id: user.id,
+        name: userProfile?.name || "Learner",
+        currentCareer: userProfile?.current_career || "Student",
+      };
+      
+      setProfile(profileData as any);
+      setLiveStats({ totalXp: userProfile?.total_xp || 0, currentLevel: userProfile?.current_level || 1 });
+
+      const { data: paths } = await supabase.from('learning_paths').select('*').eq('profile_id', user.id).order('created_at', { ascending: false });
+      
+      if (paths && paths.length > 0) {
+        setLearningPaths(paths);
+        
+        const activePathId = paths[0].id;
+        const { data: activeModules } = await supabase.from('curriculum_modules').select('*').eq('path_id', activePathId).order('order_index', { ascending: true });
+        if (activeModules) {
+          setModules(activeModules as any);
+        }
+
+        const { data: progress } = await supabase.from('user_progress').select('*').eq('profile_id', user.id).order('created_at', { ascending: false });
+        if (progress && activeModules) {
+          const enrichedSessions = progress.map(p => {
+             const mod = activeModules.find(m => m.id === p.module_id);
+             return { ...p, module: mod };
+          }).filter(s => s.module);
+          setPastSessions(enrichedSessions);
+        }
       }
-
-      supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id).single().then(({data}) => {
-         if (data) setLiveStats({ totalXp: data.total_xp || 0, currentLevel: data.current_level || 1 });
-      });
-
-      supabase.from('learning_paths').select('*').eq('profile_id', parsedProfile.id).order('created_at', { ascending: false }).then(({data}) => {
-         if (data) setLearningPaths(data);
-      });
-
-      supabase.from('user_progress').select('*').eq('profile_id', parsedProfile.id).order('created_at', { ascending: false }).then(({data}) => {
-         if (data && savedCurriculumStr) {
-            const allMods: CurriculumModule[] = JSON.parse(savedCurriculumStr);
-            const enrichedSessions = data.map(progress => {
-               const mod = allMods.find(m => m.id === progress.module_id);
-               return { ...progress, module: mod };
-            }).filter(s => s.module);
-            setPastSessions(enrichedSessions);
-         }
-         setIsLoading(false);
-      });
-    } else {
       setIsLoading(false);
-      router.push('/onboarding');
     }
+    
+    loadDashboard();
   }, [router]);
 
   if (isLoading) {
-    return <div className="p-8 flex justify-center"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/50"></div></div>;
+    return (
+      <div className="p-6 sm:p-10 max-w-5xl mx-auto pb-32 animate-fade-in">
+        {/* Header Skeleton */}
+        <div className="mb-12 bg-white p-8 rounded-2xl border border-hairline">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+            <div className="flex-1 space-y-3">
+              <div className="h-3 w-16 bg-surface rounded-full shimmer" />
+              <div className="h-8 w-72 bg-surface rounded-xl shimmer" />
+              <div className="h-5 w-56 bg-surface rounded-lg shimmer" />
+            </div>
+            <div className="h-12 w-40 bg-surface rounded-xl shimmer" />
+          </div>
+        </div>
+
+        {/* Continue Learning Skeleton */}
+        <div className="mb-16 bg-white border border-hairline p-8 sm:p-10 rounded-2xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-2.5 h-2.5 rounded-full bg-surface shimmer" />
+            <div className="h-3 w-24 bg-surface rounded-full shimmer" />
+          </div>
+          <div className="h-7 w-80 bg-surface rounded-xl shimmer mb-3" />
+          <div className="h-5 w-full max-w-lg bg-surface rounded-lg shimmer mb-8" />
+          <div className="h-12 w-36 bg-surface rounded-xl shimmer" />
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white border border-hairline p-6 rounded-2xl">
+              <div className="h-3 w-16 bg-surface rounded-full shimmer mb-3" />
+              <div className="h-8 w-20 bg-surface rounded-xl shimmer mb-2" />
+              <div className="h-3 w-12 bg-surface rounded-full shimmer" />
+            </div>
+          ))}
+        </div>
+
+        {/* Courses List Skeleton */}
+        <div className="space-y-4">
+          <div className="h-5 w-32 bg-surface rounded-lg shimmer mb-4" />
+          {[1, 2, 3].map(i => (
+            <div key={i} className="bg-white border border-hairline p-6 rounded-2xl flex items-center justify-between">
+              <div className="flex-1 space-y-2">
+                <div className="h-5 w-48 bg-surface rounded-lg shimmer" />
+                <div className="h-3 w-32 bg-surface rounded-full shimmer" />
+              </div>
+              <div className="h-10 w-24 bg-surface rounded-xl shimmer" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (!profile) return null;
@@ -84,7 +135,7 @@ export default function DashboardPage() {
       
       setLearningPaths(prev => prev.filter(p => p.id !== deleteModalPath.id));
       
-      // We don't need to touch sessionStorage anymore.
+      // We no longer rely on sessionStorage.
       // If we deleted the active path, we simply update state.
       setModules([]);
 
@@ -186,12 +237,16 @@ export default function DashboardPage() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[
-                       { title: "Advanced AI Prompting", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-                       { title: "UGC Content Creation", icon: "📸", color: "bg-pink-50 text-pink-600 border-pink-200" },
-                       { title: "High-Converting Copywriting", icon: "✍️", color: "bg-amber-50 text-amber-600 border-amber-200" },
-                       { title: "React Development", icon: "⚛️", color: "bg-blue-50 text-blue-600 border-blue-200" },
-                       { title: "UI/UX Design Masterclass", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
-                       { title: "Data Science with Python", icon: "🐍", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                       { title: "Artificial Intelligence & ML", icon: "🧠", color: "bg-blue-50 text-blue-600 border-blue-200" },
+                       { title: "Generative AI & Workflows", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+                       { title: "Cybersecurity", icon: "🛡️", color: "bg-red-50 text-red-600 border-red-200" },
+                       { title: "Cloud Computing & DevOps", icon: "☁️", color: "bg-sky-50 text-sky-600 border-sky-200" },
+                       { title: "Data Science & Analytics", icon: "📊", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                       { title: "Software Development", icon: "💻", color: "bg-slate-50 text-slate-700 border-slate-200" },
+                       { title: "Management Consulting", icon: "💼", color: "bg-amber-50 text-amber-600 border-amber-200" },
+                       { title: "Project Management", icon: "📋", color: "bg-orange-50 text-orange-600 border-orange-200" },
+                       { title: "UX/UI Design", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
+                       { title: "Digital Marketing", icon: "📱", color: "bg-pink-50 text-pink-600 border-pink-200" },
                     ].map((skill, i) => (
                       <Link key={i} href={`/onboarding?skill=${encodeURIComponent(skill.title)}`} className="group flex flex-col justify-between bg-white border border-hairline p-6 rounded-2xl hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-5 border ${skill.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>

@@ -75,36 +75,32 @@ const stats = [
 /* -- Top Skills data --------------------------------------------- */
 const topSkills = [
   {
-    category: "AI & Automation",
-    skills: ["AI Prompting", "Business Automation", "Agentic Workflows"],
+    category: "Tech & Data Skills",
+    skills: [
+      "Artificial Intelligence & ML",
+      "Generative AI & Workflows",
+      "Cybersecurity",
+      "Cloud Computing & DevOps",
+      "Data Science & Analytics",
+      "Software Development"
+    ],
     icon: (
-      <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-5.428-1.59-1.59" /></svg>
-    ),
-    color: "bg-amber-50 border-amber-100",
-  },
-  {
-    category: "Marketing & Growth",
-    skills: ["SEO Optimization", "Content Strategy", "Social Media Marketing"],
-    icon: (
-      <svg className="w-6 h-6 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" /></svg>
-    ),
-    color: "bg-teal-50 border-teal-100",
-  },
-  {
-    category: "Data & Logic",
-    skills: ["Data Analysis", "Web Development", "Database Basics"],
-    icon: (
-      <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" /></svg>
+      <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" /></svg>
     ),
     color: "bg-blue-50 border-blue-100",
   },
   {
-    category: "Design & Product",
-    skills: ["UI/UX Design", "Product Management", "User Research"],
+    category: "Strategic & Creative Skills",
+    skills: [
+      "Management Consulting",
+      "Project Management",
+      "UX/UI Design",
+      "Digital Marketing"
+    ],
     icon: (
-      <svg className="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.813-6.831m-1.5 1.5-1.42 1.42m2.84 0-.71.71" /></svg>
+      <svg className="w-6 h-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.536 0c.85.493 1.509 1.333 1.509 2.316V18" /></svg>
     ),
-    color: "bg-indigo-50 border-indigo-100",
+    color: "bg-amber-50 border-amber-100",
   }
 ];
 
@@ -438,20 +434,29 @@ export default function Home() {
             </p>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1 }} className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.1 }} className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {topSkills.map((category, i) => (
-              <div key={i} className={`rounded-2xl p-6 border transition-all hover:shadow-md hover:-translate-y-1 ${category.color}`}>
+              <div key={i} className={`rounded-2xl p-6 border transition-all hover:shadow-md ${category.color}`}>
                 <div className="flex items-center gap-3 mb-6">
                   <div className="bg-white p-2 rounded-lg shadow-sm border border-border-hairline">
                     {category.icon}
                   </div>
-                  <h3 className="font-bold text-high">{category.category}</h3>
+                  <h3 className="font-bold text-high text-xl">{category.category}</h3>
                 </div>
                 <ul className="space-y-3">
                   {category.skills.map((skill, j) => (
-                    <li key={j} className="flex items-center gap-2 text-sm font-medium text-high bg-white/60 px-3 py-2 rounded-lg border border-white/40 shadow-sm backdrop-blur-sm">
-                      <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
-                      {skill}
+                    <li key={j}>
+                       <Link href={isAuthenticated ? `/onboarding?skill=${encodeURIComponent(skill)}` : `/signup`} className="group flex items-center justify-between p-3 rounded-xl bg-white border border-transparent hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer">
+                         <div className="flex items-center gap-3">
+                           <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                           </div>
+                           <span className="text-sm font-bold text-high group-hover:text-primary transition-colors">{skill}</span>
+                         </div>
+                         <span className="text-xs font-bold text-primary opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all bg-primary/10 px-2 py-1 rounded-md">
+                           Start
+                         </span>
+                       </Link>
                     </li>
                   ))}
                 </ul>

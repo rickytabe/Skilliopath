@@ -82,22 +82,7 @@ export default function OnboardingPage() {
         await supabase.from('profiles').update({ name: finalName, current_career: finalCareer }).eq('id', profileId);
       }
 
-      sessionStorage.setItem(
-        "skilliopath_onboarding",
-        JSON.stringify({ 
-          profileId,
-          name: finalName, 
-          currentCareer: finalCareer,
-          skillToLearn: skillToLearn.trim(),
-          currentLevel,
-          timeline
-        })
-      );
-
-      sessionStorage.removeItem("skilliopath_profile");
-      sessionStorage.removeItem("skilliopath_curriculum");
-
-      router.push("/diagnostic");
+      router.push(`/diagnostic?skillToLearn=${encodeURIComponent(skillToLearn.trim())}&currentLevel=${encodeURIComponent(currentLevel)}&timeline=${encodeURIComponent(timeline)}`);
     } catch (error) {
       setErrorMsg("Something went wrong. Please try again.");
       setIsSubmitting(false);

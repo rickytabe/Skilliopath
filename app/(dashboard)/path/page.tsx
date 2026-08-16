@@ -215,12 +215,16 @@ export default function PathPage() {
            <h4 className="text-sm font-bold text-muted uppercase tracking-wider mb-5 text-center">Or start a Trending Skill</h4>
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              {[
-                { title: "Advanced AI Prompting", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
-                { title: "UGC Content Creation", icon: "📸", color: "bg-pink-50 text-pink-600 border-pink-200" },
-                { title: "High-Converting Copywriting", icon: "✍️", color: "bg-amber-50 text-amber-600 border-amber-200" },
-                { title: "React Development", icon: "⚛️", color: "bg-blue-50 text-blue-600 border-blue-200" },
-                { title: "UI/UX Design Masterclass", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
-                { title: "Data Science with Python", icon: "🐍", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                { title: "Artificial Intelligence & ML", icon: "🧠", color: "bg-blue-50 text-blue-600 border-blue-200" },
+                { title: "Generative AI & Workflows", icon: "🤖", color: "bg-indigo-50 text-indigo-600 border-indigo-200" },
+                { title: "Cybersecurity", icon: "🛡️", color: "bg-red-50 text-red-600 border-red-200" },
+                { title: "Cloud Computing & DevOps", icon: "☁️", color: "bg-sky-50 text-sky-600 border-sky-200" },
+                { title: "Data Science & Analytics", icon: "📊", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+                { title: "Software Development", icon: "💻", color: "bg-slate-50 text-slate-700 border-slate-200" },
+                { title: "Management Consulting", icon: "💼", color: "bg-amber-50 text-amber-600 border-amber-200" },
+                { title: "Project Management", icon: "📋", color: "bg-orange-50 text-orange-600 border-orange-200" },
+                { title: "UX/UI Design", icon: "🎨", color: "bg-purple-50 text-purple-600 border-purple-200" },
+                { title: "Digital Marketing", icon: "📱", color: "bg-pink-50 text-pink-600 border-pink-200" },
              ].map((skill, i) => (
                <Link key={i} href={`/onboarding?skill=${encodeURIComponent(skill.title)}`} className="group flex flex-col items-center text-center bg-white border border-hairline p-5 rounded-2xl hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4 border ${skill.color} shadow-sm group-hover:scale-110 transition-transform duration-300`}>

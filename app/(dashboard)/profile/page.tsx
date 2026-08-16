@@ -2,37 +2,93 @@
 
 import { useEffect, useState } from "react";
 import { LearnerProfile } from "@/services/ai/client";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/utils/supabase/client";
 
 export default function ProfilePage() {
    const [profile, setProfile] = useState<LearnerProfile | null>(null);
    const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1, totalStars: 0 });
    const [isLoading, setIsLoading] = useState(true);
+   const supabase = createClient();
 
    useEffect(() => {
-      const savedProfileStr = sessionStorage.getItem("skilliopath_profile");
-      if (savedProfileStr) {
-         const parsedProfile = JSON.parse(savedProfileStr) as LearnerProfile;
-         setProfile(parsedProfile);
+      async function loadProfile() {
+         const { data: { user } } = await supabase.auth.getUser();
+         if (!user) return;
 
-         Promise.all([
-            supabase.from('profiles').select('total_xp, current_level').eq('id', parsedProfile.id as string).single(),
-            supabase.from('user_progress').select('stars_earned').eq('profile_id', parsedProfile.id as string)
-         ]).then(([profileData, progressData]) => {
-            const xp = profileData.data?.total_xp || 0;
-            const level = profileData.data?.current_level || 1;
-            const stars = progressData.data?.reduce((acc, curr) => acc + (curr.stars_earned || 0), 0) || 0;
+         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+         if (!profileData) return;
 
-            setLiveStats({ totalXp: xp, currentLevel: level, totalStars: stars });
-            setIsLoading(false);
+         const { data: paths } = await supabase.from('learning_paths').select('*').eq('profile_id', user.id).order('created_at', { ascending: false }).limit(1).single();
+         
+         setProfile({
+            id: user.id,
+            name: profileData.name || "Learner",
+            currentCareer: profileData.current_career || "Student",
+            skillToLearn: paths?.skill_to_learn || "Unknown Skill",
+            skillGaps: paths?.skill_gaps || [],
+         } as LearnerProfile);
+
+         const { data: progressData } = await supabase.from('user_progress').select('stars_earned').eq('profile_id', user.id);
+         const stars = progressData?.reduce((acc, curr) => acc + (curr.stars_earned || 0), 0) || 0;
+
+         setLiveStats({ 
+            totalXp: profileData.total_xp || 0, 
+            currentLevel: profileData.current_level || 1, 
+            totalStars: stars 
          });
-      } else {
+         
          setIsLoading(false);
       }
+      
+      loadProfile();
    }, []);
 
    if (isLoading) {
-      return <div className="p-8 flex justify-center"><div className="animate-pulse w-8 h-8 rounded-full bg-primary/50"></div></div>;
+      return (
+         <div className="p-6 sm:p-10 max-w-4xl mx-auto pb-32 animate-fade-in">
+            <div className="h-8 w-40 bg-surface rounded-xl shimmer mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               {/* Identity Card Skeleton */}
+               <div className="md:col-span-2 bg-white border border-hairline p-8 rounded-3xl">
+                  <div className="flex items-center gap-6 mb-8 border-b border-hairline pb-8">
+                     <div className="w-24 h-24 rounded-full bg-surface shimmer" />
+                     <div className="flex-1 space-y-3">
+                        <div className="h-6 w-40 bg-surface rounded-xl shimmer" />
+                        <div className="h-4 w-28 bg-surface rounded-lg shimmer" />
+                     </div>
+                  </div>
+                  <div className="space-y-4">
+                     <div className="h-3 w-20 bg-surface rounded-full shimmer mb-2" />
+                     <div className="h-6 w-64 bg-surface rounded-xl shimmer mb-6" />
+                     <div className="h-3 w-28 bg-surface rounded-full shimmer mb-3" />
+                     {[1, 2, 3].map(i => (
+                        <div key={i} className="flex items-center gap-3">
+                           <div className="w-4 h-4 rounded-full bg-surface shimmer" />
+                           <div className="h-4 w-48 bg-surface rounded-lg shimmer" />
+                        </div>
+                     ))}
+                  </div>
+               </div>
+               {/* Stats Column Skeleton */}
+               <div className="space-y-6">
+                  <div className="bg-white border border-hairline p-6 rounded-3xl text-center">
+                     <div className="h-3 w-20 mx-auto bg-surface rounded-full shimmer mb-4" />
+                     <div className="h-12 w-16 mx-auto bg-surface rounded-xl shimmer mb-2" />
+                     <div className="h-3 w-24 mx-auto bg-surface rounded-full shimmer" />
+                  </div>
+                  <div className="bg-white border border-hairline p-6 rounded-3xl text-center">
+                     <div className="flex justify-center gap-2 mb-4">
+                        {[1, 2, 3].map(i => (
+                           <div key={i} className="w-6 h-6 rounded bg-surface shimmer" />
+                        ))}
+                     </div>
+                     <div className="h-10 w-12 mx-auto bg-surface rounded-xl shimmer mb-2" />
+                     <div className="h-3 w-24 mx-auto bg-surface rounded-full shimmer" />
+                  </div>
+               </div>
+            </div>
+         </div>
+      );
    }
 
    if (!profile) return null;
