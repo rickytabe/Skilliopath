@@ -48,7 +48,7 @@ You MUST return your response as a valid JSON object strictly matching this sche
   const response = await ai.chat.completions.create({
     model: MODEL_NAME,
     messages,
-    temperature: 0.2,
+    temperature: 1,
     response_format: { type: "json_object" },
   });
 

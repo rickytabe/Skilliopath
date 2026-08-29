@@ -44,7 +44,7 @@ Rules:
     const response = await ai.chat.completions.create({
       model: MODEL_NAME,
       messages,
-      temperature: 0.7,
+      temperature: 1,
     });
 
     const text = response.choices[0]?.message?.content;

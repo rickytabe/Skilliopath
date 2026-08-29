@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         { role: "system", content: "You are a helpful AI assistant running on NVIDIA's Nemotron model. You keep your answers very short and conversational." },
         { role: "user", content: message }
       ],
-      temperature: 0.7,
+      temperature: 1,
     });
 
     const text = response.choices[0]?.message?.content;

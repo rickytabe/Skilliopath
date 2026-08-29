@@ -1,11 +1,11 @@
 import OpenAI from "openai";
 
 export const ai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_NVIDIA_API_KEY_2 || "",
-  baseURL: "https://integrate.api.nvidia.com/v1",
+  apiKey: process.env.KIMI_AI_API_KEY || process.env.NEXT_PUBLIC_KIMI_API_KEY || "",
+  baseURL: "https://api.moonshot.ai/v1",
 });
 
-export const MODEL_NAME = "nvidia/llama-3.3-nemotron-super-49b-v1.5";
+export const MODEL_NAME = "kimi-k3";
 
 // ── Data Contracts ────────────────────────────────────────
 
