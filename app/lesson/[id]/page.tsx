@@ -249,6 +249,9 @@ export default function LessonPage() {
 
   if (!profile || !activeModule) return null;
 
+  const currentIndex = curriculum.findIndex(m => m.id === lessonId);
+  const nextModule = currentIndex !== -1 && currentIndex < curriculum.length - 1 ? curriculum[currentIndex + 1] : null;
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       
@@ -511,42 +514,60 @@ export default function LessonPage() {
                 </div>
               </section>
 
-              {/* Completion Celebration Modal */}
-              {showCelebration && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fade-in">
-                  <div className="bg-surface border border-hairline p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
-                    {/* Confetti / Star effects */}
-                    <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
-                    
-                    <h2 className="text-3xl font-display font-bold text-high mb-2 relative z-10">Module Complete! 🥳</h2>
-                    <p className="text-sm text-muted mb-8 relative z-10">You've mastered this concept.</p>
-                    
-                    <div className="flex justify-center gap-2 mb-6 relative z-10">
-                      {[1, 2, 3].map(star => (
-                        <svg key={star} className={`w-10 h-10 transition-all transform ${star <= earnedStats.stars ? 'text-primary scale-110' : 'text-surface-light opacity-30 grayscale'}`} fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
-                    </div>
-
-                    <div className="bg-background/50 rounded-xl p-4 mb-8 border border-hairline inline-block relative z-10">
-                      <p className="text-xs text-muted uppercase tracking-wider font-bold mb-1">XP Earned</p>
-                      <p className="text-2xl font-black text-primary">+{earnedStats.xp}</p>
-                    </div>
-
-                    <Link 
-                      href="/path"
-                      className="block w-full py-4 bg-primary text-background text-sm font-bold rounded-full shadow-[0_0_20px_rgba(242,169,59,0.3)] hover:shadow-[0_0_30px_rgba(242,169,59,0.5)] hover:scale-105 transition-all relative z-10"
-                    >
-                      Return to Path →
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
           ) : null}
         </div>
       </main>
+
+      {/* Completion Celebration Modal - Moved to root level to avoid transform bugs */}
+      {showCelebration && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface border border-hairline p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl relative overflow-hidden">
+            {/* Confetti / Star effects */}
+            <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
+            
+            <h2 className="text-3xl font-display font-bold text-high mb-2 relative z-10">Module Complete! 🥳</h2>
+            <p className="text-sm text-muted mb-8 relative z-10">You've mastered this concept.</p>
+            
+            <div className="flex justify-center gap-2 mb-6 relative z-10">
+              {[1, 2, 3].map(star => (
+                <svg key={star} className={`w-10 h-10 transition-all transform ${star <= earnedStats.stars ? 'text-primary scale-110' : 'text-surface-light opacity-30 grayscale'}`} fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+
+            <div className="bg-background/50 rounded-xl p-4 mb-8 border border-hairline inline-block relative z-10">
+              <p className="text-xs text-muted uppercase tracking-wider font-bold mb-1">XP Earned</p>
+              <p className="text-2xl font-black text-primary">+{earnedStats.xp}</p>
+            </div>
+
+            {nextModule ? (
+              <div className="flex flex-col gap-3 relative z-10">
+                <Link 
+                  href={`/lesson/${nextModule.id}`}
+                  className="block w-full py-4 bg-primary text-background text-sm font-bold rounded-full shadow-[0_0_20px_rgba(242,169,59,0.3)] hover:shadow-[0_0_30px_rgba(242,169,59,0.5)] hover:scale-105 transition-all"
+                >
+                  Next Module →
+                </Link>
+                <Link 
+                  href="/path"
+                  className="block w-full py-3 text-sm font-bold text-muted hover:text-high transition-colors"
+                >
+                  Return to Path
+                </Link>
+              </div>
+            ) : (
+              <Link 
+                href="/path"
+                className="block w-full py-4 bg-primary text-background text-sm font-bold rounded-full shadow-[0_0_20px_rgba(242,169,59,0.3)] hover:shadow-[0_0_30px_rgba(242,169,59,0.5)] hover:scale-105 transition-all relative z-10"
+              >
+                Return to Path →
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

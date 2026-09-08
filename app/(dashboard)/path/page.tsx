@@ -16,7 +16,7 @@ function PathContent() {
   const [allPaths, setAllPaths] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
+  const [progressMap, setProgressMap] = useState<Record<string, { stars: number; xp: number }>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingText, setLoadingText] = useState("Analyzing your skills...");
   
@@ -87,7 +87,7 @@ function PathContent() {
 
         const { data: pathsData } = await supabase
           .from('learning_paths')
-          .select('*')
+          .select('*, curriculum_modules(id, status)')
           .eq('profile_id', user.id)
           .order('created_at', { ascending: false });
         
@@ -102,6 +102,8 @@ function PathContent() {
         }
 
         if (!pathData) {
+          setProfile(null);
+          setModules([]);
           setIsLoading(false);
           return;
         }
@@ -174,9 +176,9 @@ function PathContent() {
 
   useEffect(() => {
     if (profile && profile.id) {
-      supabase.from('user_progress').select('module_id, stars_earned').eq('profile_id', profile.id as string).then(({ data }) => {
+      supabase.from('user_progress').select('module_id, stars_earned, xp_earned').eq('profile_id', profile.id as string).then(({ data }) => {
         if (data) {
-          setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: p.stars_earned || 0 }), {} as Record<string, number>));
+          setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: { stars: p.stars_earned || 0, xp: p.xp_earned || 0 } }), {} as Record<string, { stars: number; xp: number }>));
         }
       });
     }
@@ -249,24 +251,42 @@ function PathContent() {
           <div className="mx-auto max-w-5xl animate-fade-in-up">
             <h1 className="text-3xl sm:text-4xl font-bold font-display text-high mb-8">My Learning Paths</h1>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-               {allPaths.map((path) => (
-                  <Link key={path.id} href={`/path?id=${path.id}`} className="bg-white border border-hairline p-6 rounded-2xl flex flex-col justify-between hover:border-primary/60 transition-all duration-200 group shadow-sm hover:shadow-md cursor-pointer">
-                     <div className="mb-6">
-                        <h4 className="font-bold text-lg text-high mb-2 group-hover:text-primary transition-colors line-clamp-2">{path.skill_to_learn}</h4>
-                        <div className="flex items-center gap-2 text-xs text-muted font-medium">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          Started {new Date(path.created_at).toLocaleDateString()}
-                        </div>
-                     </div>
-                     <div className="flex items-center pt-4 border-t border-hairline">
-                        <span className="text-sm font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
-                           Continue <span aria-hidden="true">&rarr;</span>
-                        </span>
-                     </div>
-                  </Link>
-               ))}
+               {allPaths.map((path) => {
+                  const mods = path.curriculum_modules || [];
+                  const totalMods = mods.length;
+                  const completedMods = mods.filter((m: any) => m.status === 'complete').length;
+                  const pathProgress = totalMods > 0 ? Math.round((completedMods / totalMods) * 100) : 0;
+                  
+                  return (
+                    <Link key={path.id} href={`/path?id=${path.id}`} className="bg-white border border-hairline p-6 rounded-2xl flex flex-col justify-between hover:border-primary/60 transition-all duration-200 group shadow-sm hover:shadow-md cursor-pointer">
+                       <div className="mb-6">
+                          <h4 className="font-bold text-lg text-high mb-2 group-hover:text-primary transition-colors line-clamp-2">{path.skill_to_learn}</h4>
+                          <div className="flex items-center gap-2 text-xs text-muted font-medium mb-4">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Started {new Date(path.created_at).toLocaleDateString()}
+                          </div>
+                          
+                          {/* Progress Bar */}
+                          <div className="w-full">
+                            <div className="flex justify-between text-[10px] font-bold text-muted mb-1 uppercase tracking-wider">
+                              <span>Progress</span>
+                              <span className={pathProgress === 100 ? "text-green-500" : "text-primary"}>{pathProgress}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-500 ${pathProgress === 100 ? 'bg-green-500' : 'bg-primary'}`} style={{ width: `${pathProgress}%` }}></div>
+                            </div>
+                          </div>
+                       </div>
+                       <div className="flex items-center pt-4 border-t border-hairline justify-between">
+                          <span className="text-sm font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
+                             {pathProgress === 100 ? "Review Path" : "Continue"} <span aria-hidden="true">&rarr;</span>
+                          </span>
+                       </div>
+                    </Link>
+                  )
+               })}
             </div>
           </div>
         </main>
@@ -323,6 +343,21 @@ function PathContent() {
 
   let currentTimingLabel = "";
 
+  let completedCount = 0;
+  let totalStars = 0;
+  let totalXp = 0;
+
+  modules.forEach(m => {
+    if (m.status === 'complete' && progressMap[m.id]) {
+      completedCount++;
+      totalStars += progressMap[m.id].stars;
+      totalXp += progressMap[m.id].xp;
+    }
+  });
+
+  const percentage = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
+  const avgStars = completedCount > 0 ? (totalStars / completedCount).toFixed(1) : "0.0";
+
   return (
     <main className="min-h-screen bg-background px-4 sm:px-6 pt-24 pb-32 overflow-x-hidden">
       <div className="mx-auto max-w-5xl">
@@ -347,8 +382,16 @@ function PathContent() {
             <span className="px-4 py-1.5 text-sm font-medium bg-primary/10 text-primary border border-primary/20 rounded-full">
               {modules.length} Modules
             </span>
-            <span className="px-4 py-1.5 text-sm font-medium bg-white/5 text-mid border border-hairline rounded-full">
-              {modules.length > 0 ? Math.round((modules.filter(m => m.status === 'complete').length / modules.length) * 100) : 0}% Completed
+            <span className="px-4 py-1.5 text-sm font-medium bg-white/5 text-mid border border-hairline rounded-full flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              {percentage}% Completed
+            </span>
+            <span className="px-4 py-1.5 text-sm font-medium bg-white/5 text-mid border border-hairline rounded-full flex items-center gap-1.5">
+              <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+              {avgStars} Avg
+            </span>
+            <span className="px-4 py-1.5 text-sm font-medium bg-white/5 text-mid border border-hairline rounded-full font-display">
+              {totalXp} XP Earned
             </span>
           </div>
 
@@ -489,7 +532,7 @@ function PathContent() {
                         {isComplete && progressMap[mod.id] !== undefined && (
                           <div className="flex gap-1 mt-4">
                             {[1, 2, 3].map(star => (
-                              <svg key={star} className={`w-4 h-4 ${star <= progressMap[mod.id] ? 'text-primary' : 'text-surface-light opacity-30 grayscale'}`} fill="currentColor" viewBox="0 0 20 20">
+                              <svg key={star} className={`w-4 h-4 ${star <= progressMap[mod.id].stars ? 'text-primary' : 'text-surface-light opacity-30 grayscale'}`} fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                               </svg>
                             ))}
