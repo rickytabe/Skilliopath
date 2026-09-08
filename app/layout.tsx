@@ -1,12 +1,24 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
 import { Analytics } from "@vercel/analytics/next";
 
+export const viewport: Viewport = {
+  themeColor: "#111827",
+};
+
 export const metadata: Metadata = {
   title: "SkilioPath",
   description: "AI Digital Skills Learning Companion",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SkillioPath",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -28,6 +40,19 @@ export default function RootLayout({
         {children}
         <Toaster />
         <Analytics />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
