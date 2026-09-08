@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { createClient } from "@/utils/supabase/client";
 import { logout } from "@/app/(auth)/actions";
-import { TestChatbot } from "@/components/TestChatbot";
 import { getLevelProgress, getTierForLevel } from "@/utils/xp";
 
 export interface UserProfile {
@@ -178,25 +177,56 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto bg-base relative z-10 custom-scrollbar">
-        {/* Mobile Header */}
-        <div className="md:hidden border-b border-hairline bg-white p-4 sticky top-0 z-20 flex justify-between items-center">
+      <main className="flex-1 overflow-y-auto bg-base relative z-10 custom-scrollbar pb-20 md:pb-0">
+        {/* Mobile Header - Clean Version */}
+        <div className="md:hidden border-b border-hairline bg-white p-4 sticky top-0 z-20 flex justify-between items-center shadow-sm">
            <div className="flex items-center gap-2">
-             <Image src="/logo.png" alt="SkillioPath Logo" width={24} height={24} className="w-6 h-6 object-contain" />
-             <span className="font-bold text-sm">SkillioPath</span>
+             <Image src="/logo.png" alt="SkillioPath Logo" width={28} height={28} className="w-7 h-7 object-contain drop-shadow-sm" />
+             <span className="font-display font-bold text-[17px] tracking-tight text-high">SkillioPath</span>
            </div>
-           <div className="flex gap-4 text-muted">
-              {navItems.map(item => (
-                <Link key={item.name} href={item.href} className={pathname === item.href ? 'text-primary' : ''}>
-                  {item.icon}
-                </Link>
-              ))}
-           </div>
+           
+           {/* Mobile Profile Avatar */}
+           {profile && (
+             <Link href="/profile" className="focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-full transition-transform active:scale-95">
+               {profile.avatar_url ? (
+                 <img src={profile.avatar_url} alt={profile.name} className="w-9 h-9 rounded-full object-cover shadow-sm ring-1 ring-hairline" />
+               ) : (
+                 <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shadow-sm ring-1 ring-hairline">
+                   {profile.name?.charAt(0).toUpperCase()}
+                 </div>
+               )}
+             </Link>
+           )}
         </div>
 
         {children}
       </main>
-      <TestChatbot />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-hairline z-50 flex justify-around items-center px-2 py-2 shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+        {navItems.map((item) => {
+          const isActive = pathname === item.href;
+          // Use a shorter name for bottom nav if needed, or just first word
+          const shortName = item.name === "Career Market" ? "Market" : item.name === "Leaderboard" ? "Ranks" : item.name;
+          
+          return (
+            <Link 
+              key={item.name} 
+              href={item.href}
+              className={`flex flex-col items-center justify-center w-16 pt-1 pb-1 rounded-xl transition-all duration-200 active:scale-95 ${
+                isActive ? 'text-primary' : 'text-muted hover:text-high hover:bg-surface'
+              }`}
+            >
+              <div className={`transition-all duration-200 ${isActive ? 'scale-110 mb-1 drop-shadow-sm' : 'scale-100 mb-1 opacity-80'}`}>
+                {item.icon}
+              </div>
+              <span className={`text-[10px] font-bold tracking-tight transition-all duration-200 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                {shortName}
+              </span>
+            </Link>
+          )
+        })}
+      </nav>
     </div>
   );
 }
