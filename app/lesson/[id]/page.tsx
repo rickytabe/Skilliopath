@@ -29,6 +29,7 @@ export default function LessonPage() {
   // Celebration state
   const [showCelebration, setShowCelebration] = useState(false);
   const [earnedStats, setEarnedStats] = useState({ stars: 0, xp: 0, totalXp: 0, currentLevel: 0 });
+  const [isSavingStats, setIsSavingStats] = useState(false);
 
   // Audio state
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -225,6 +226,8 @@ export default function LessonPage() {
       const flawlessBonus = percentage === 1 ? 5 : 0;
       const xp = 10 + flawlessBonus;
 
+      setIsSavingStats(true);
+
       // Save to API
       fetch("/api/progress", {
         method: "POST",
@@ -240,7 +243,8 @@ export default function LessonPage() {
       .then(data => {
         setEarnedStats({ stars, xp, totalXp: data?.totalXp || 0, currentLevel: data?.currentLevel || 0 });
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsSavingStats(false));
 
       playCelebrationSound();
       setShowCelebration(true);
@@ -529,18 +533,31 @@ export default function LessonPage() {
             <h2 className="text-3xl font-display font-bold text-high mb-2 relative z-10">Module Complete! 🥳</h2>
             <p className="text-sm text-muted mb-8 relative z-10">You've mastered this concept.</p>
             
-            <div className="flex justify-center gap-2 mb-6 relative z-10">
-              {[1, 2, 3].map(star => (
-                <svg key={star} className={`w-10 h-10 transition-all transform ${star <= earnedStats.stars ? 'text-primary scale-110' : 'text-surface-light opacity-30 grayscale'}`} fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-            </div>
+            {isSavingStats ? (
+              <div className="flex flex-col items-center justify-center py-2 animate-fade-in">
+                <div className="flex justify-center gap-2 mb-6">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="w-10 h-10 rounded-full bg-surface-light animate-pulse opacity-50" />
+                  ))}
+                </div>
+                <div className="bg-surface-light/50 border border-hairline rounded-xl w-32 h-[72px] animate-pulse mb-8" />
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-center gap-2 mb-6 relative z-10 animate-fade-in-up">
+                  {[1, 2, 3].map(star => (
+                    <svg key={star} className={`w-10 h-10 transition-all transform ${star <= earnedStats.stars ? 'text-primary scale-110 drop-shadow-[0_0_10px_rgba(242,169,59,0.5)]' : 'text-surface-light opacity-30 grayscale'}`} fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
 
-            <div className="bg-background/50 rounded-xl p-4 mb-8 border border-hairline inline-block relative z-10">
-              <p className="text-xs text-muted uppercase tracking-wider font-bold mb-1">XP Earned</p>
-              <p className="text-2xl font-black text-primary">+{earnedStats.xp}</p>
-            </div>
+                <div className="bg-background/50 rounded-xl p-4 mb-8 border border-hairline inline-block relative z-10 animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+                  <p className="text-xs text-muted uppercase tracking-wider font-bold mb-1">XP Earned</p>
+                  <p className="text-2xl font-black text-primary">+{earnedStats.xp}</p>
+                </div>
+              </>
+            )}
 
             {nextModule ? (
               <div className="flex flex-col gap-3 relative z-10">

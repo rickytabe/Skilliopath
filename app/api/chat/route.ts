@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ai, MODEL_NAME } from "@/services/ai/client";
+import { ai, MODEL_NAME, generateWithRetry } from "@/services/ai/client";
 
 export async function POST(req: Request) {
   try {
@@ -41,7 +41,7 @@ Rules:
       }
     }
 
-    const response = await ai.chat.completions.create({
+    const response = await generateWithRetry({
       model: MODEL_NAME,
       messages,
       temperature: 1,

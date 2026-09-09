@@ -1,4 +1,4 @@
-import { ai, MODEL_NAME, LearnerProfile, CurriculumModule, LessonContent } from "./client";
+import { ai, MODEL_NAME, LearnerProfile, CurriculumModule, LessonContent, generateWithRetry } from "./client";
 
 export async function generateLesson(
   module: CurriculumModule,
@@ -40,7 +40,7 @@ You MUST return your response as a valid JSON object strictly matching this sche
 }
 `;
 
-  const response = await ai.chat.completions.create({
+  const response = await generateWithRetry({
     model: MODEL_NAME,
     messages: [{ role: "system", content: prompt }],
     temperature: 1,

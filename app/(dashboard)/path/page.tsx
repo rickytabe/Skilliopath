@@ -85,6 +85,11 @@ function PathContent() {
           return;
         }
 
+        const { data: progressData } = await supabase.from('user_progress').select('module_id, stars_earned, xp_earned').eq('profile_id', user.id);
+        if (progressData) {
+          setProgressMap(progressData.reduce((acc, p) => ({ ...acc, [p.module_id as string]: { stars: p.stars_earned || 0, xp: p.xp_earned || 0 } }), {} as Record<string, { stars: number; xp: number }>));
+        }
+
         const { data: pathsData } = await supabase
           .from('learning_paths')
           .select('*, curriculum_modules(id, status)')
@@ -174,15 +179,7 @@ function PathContent() {
     loadOrGenerate();
   }, [router, searchParams]);
 
-  useEffect(() => {
-    if (profile && profile.id) {
-      supabase.from('user_progress').select('module_id, stars_earned, xp_earned').eq('profile_id', profile.id as string).then(({ data }) => {
-        if (data) {
-          setProgressMap(data.reduce((acc, p) => ({ ...acc, [p.module_id as string]: { stars: p.stars_earned || 0, xp: p.xp_earned || 0 } }), {} as Record<string, { stars: number; xp: number }>));
-        }
-      });
-    }
-  }, [profile]);
+
 
   if (isGenerating) {
     return (
@@ -256,6 +253,10 @@ function PathContent() {
                   const totalMods = mods.length;
                   const completedMods = mods.filter((m: any) => m.status === 'complete').length;
                   const pathProgress = totalMods > 0 ? Math.round((completedMods / totalMods) * 100) : 0;
+                  const totalXp = mods.reduce((sum: number, m: any) => {
+                     const modProgress = progressMap[m.id];
+                     return sum + (modProgress ? modProgress.xp : 0);
+                  }, 0);
                   
                   return (
                     <Link key={path.id} href={`/path?id=${path.id}`} className="bg-white border border-hairline p-6 rounded-2xl flex flex-col justify-between hover:border-primary/60 transition-all duration-200 group shadow-sm hover:shadow-md cursor-pointer">
@@ -274,8 +275,12 @@ function PathContent() {
                               <span>Progress</span>
                               <span className={pathProgress === 100 ? "text-green-500" : "text-primary"}>{pathProgress}%</span>
                             </div>
-                            <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden">
+                            <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden mb-3">
                               <div className={`h-full rounded-full transition-all duration-500 ${pathProgress === 100 ? 'bg-green-500' : 'bg-primary'}`} style={{ width: `${pathProgress}%` }}></div>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-high">
+                               <div className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] uppercase">+{totalXp} XP</div>
+                               <span className="text-muted">Earned</span>
                             </div>
                           </div>
                        </div>
@@ -552,7 +557,7 @@ function PathContent() {
 
                 {/* Goal Icon */}
                 <div className="absolute top-0 left-0 sm:left-6 md:left-1/2 w-12 h-12 transform translate-x-0 sm:-translate-x-1/2 flex items-center justify-center z-10">
-                  <div className="w-16 h-16 rounded-full bg-linear-to-br from-yellow-400 to-yellow-600 shadow-[0_0_40px_rgba(234,179,8,0.5)] flex items-center justify-center border-4 border-background z-20">
+                  <div className={`w-16 h-16 rounded-full shadow-[0_0_40px_rgba(234,179,8,0.5)] flex items-center justify-center border-4 border-background z-20 ${percentage === 100 ? 'bg-linear-to-br from-yellow-400 to-yellow-600 animate-pulse' : 'bg-linear-to-br from-yellow-400/60 to-yellow-600/60'}`}>
                     <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                     </svg>
@@ -561,23 +566,53 @@ function PathContent() {
 
                 {/* Content Card */}
                 <div className="w-full pl-16 sm:pl-20 md:pl-0 md:max-w-lg md:mx-auto z-10">
-                  <div className="p-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/5 shadow-[0_0_30px_rgba(234,179,8,0.1)] relative overflow-hidden md:text-center backdrop-blur-md">
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-yellow-500/20 rounded-full blur-[50px]"></div>
+                  {percentage === 100 ? (
+                    <div className="p-8 rounded-2xl border border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_40px_rgba(234,179,8,0.2)] relative overflow-hidden md:text-center backdrop-blur-md">
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-yellow-500/30 rounded-full blur-[50px]"></div>
 
-                    <div className="flex items-center md:justify-center gap-2 mb-3 relative z-10">
-                      <p className="text-xs font-bold uppercase tracking-wider text-yellow-500">
-                        Final Goal
+                      <div className="flex items-center md:justify-center gap-2 mb-3 relative z-10">
+                        <p className="text-xs font-bold uppercase tracking-wider text-yellow-600">
+                          🎉 Path Complete!
+                        </p>
+                      </div>
+
+                      <h3 className="text-2xl font-bold text-high mb-3 relative z-10">
+                        {profile.skillToLearn} Certification
+                      </h3>
+
+                      <p className="text-sm leading-relaxed text-yellow-600/80 relative z-10 font-medium mb-6">
+                        Congratulations! You've completed all modules. Your personalized certificate is ready.
+                      </p>
+
+                      <Link
+                        href={`/certificate/${profile.pathId}`}
+                        className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white font-bold rounded-xl hover:from-yellow-600 hover:to-yellow-700 transition-all shadow-[0_0_25px_rgba(234,179,8,0.4)] hover:shadow-[0_0_35px_rgba(234,179,8,0.6)] hover:-translate-y-0.5 relative z-10"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                        View Certificate →
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="p-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/5 shadow-[0_0_30px_rgba(234,179,8,0.1)] relative overflow-hidden md:text-center backdrop-blur-md">
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-yellow-500/20 rounded-full blur-[50px]"></div>
+
+                      <div className="flex items-center md:justify-center gap-2 mb-3 relative z-10">
+                        <p className="text-xs font-bold uppercase tracking-wider text-yellow-500">
+                          Final Goal
+                        </p>
+                      </div>
+
+                      <h3 className="text-2xl font-bold text-high mb-3 relative z-10">
+                        {profile.skillToLearn} Certification
+                      </h3>
+
+                      <p className="text-sm leading-relaxed text-yellow-500/80 relative z-10 font-medium">
+                        Complete all modules to unlock your personalized certificate of mastery.
                       </p>
                     </div>
-
-                    <h3 className="text-2xl font-bold text-high mb-3 relative z-10">
-                      {profile.skillToLearn} Certification
-                    </h3>
-
-                    <p className="text-sm leading-relaxed text-yellow-500/80 relative z-10 font-medium">
-                      Complete all modules to unlock your personalized certificate of mastery.
-                    </p>
-                  </div>
+                  )}
                 </div>
 
               </div>

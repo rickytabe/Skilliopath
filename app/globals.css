@@ -228,3 +228,18 @@ body {
   .waypoint-active     { animation: none; }
   .trail-path          { animation: none; stroke-dashoffset: 0; }
 }
+
+/* ─── Certificate ───────────────────────────────────────── */
+.certificate-container {
+  background:
+    linear-gradient(135deg, rgba(242, 169, 59, 0.03) 0%, transparent 50%),
+    linear-gradient(225deg, rgba(242, 169, 59, 0.03) 0%, transparent 50%),
+    #FFFFFF;
+}
+
+@media print {
+  .certificate-container {
+    box-shadow: none;
+    border-radius: 0;
+  }
+}

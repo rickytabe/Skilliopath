@@ -1,4 +1,4 @@
-import { ai, MODEL_NAME, LearnerProfile } from "./client";
+import { ai, MODEL_NAME, LearnerProfile, generateWithRetry } from "./client";
 
 export async function generateProfile(
   history: { role: string; content: string }[],
@@ -45,7 +45,7 @@ You MUST return your response as a valid JSON object strictly matching this sche
     content: "Extract the LearnerProfile JSON now. No prose."
   });
 
-  const response = await ai.chat.completions.create({
+  const response = await generateWithRetry({
     model: MODEL_NAME,
     messages,
     temperature: 1,

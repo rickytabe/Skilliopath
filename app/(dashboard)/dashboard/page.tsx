@@ -12,6 +12,7 @@ export default function DashboardPage() {
   const [modules, setModules] = useState<CurriculumModule[]>([]);
   const [pastSessions, setPastSessions] = useState<any[]>([]);
   const [learningPaths, setLearningPaths] = useState<any[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<string, { xp: number }>>({});
   const [liveStats, setLiveStats] = useState({ totalXp: 0, currentLevel: 1 });
   const [isLoading, setIsLoading] = useState(true);
   const [deleteModalPath, setDeleteModalPath] = useState<any | null>(null);
@@ -38,7 +39,7 @@ export default function DashboardPage() {
       setProfile(profileData as any);
       setLiveStats({ totalXp: userProfile?.total_xp || 0, currentLevel: userProfile?.current_level || 1 });
 
-      const { data: paths } = await supabase.from('learning_paths').select('*').eq('profile_id', user.id).order('created_at', { ascending: false });
+      const { data: paths } = await supabase.from('learning_paths').select('*, curriculum_modules(id, status)').eq('profile_id', user.id).order('created_at', { ascending: false });
       
       if (paths && paths.length > 0) {
         setLearningPaths(paths);
@@ -50,12 +51,16 @@ export default function DashboardPage() {
         }
 
         const { data: progress } = await supabase.from('user_progress').select('*').eq('profile_id', user.id).order('created_at', { ascending: false });
-        if (progress && activeModules) {
-          const enrichedSessions = progress.map(p => {
-             const mod = activeModules.find(m => m.id === p.module_id);
-             return { ...p, module: mod };
-          }).filter(s => s.module);
-          setPastSessions(enrichedSessions);
+        if (progress) {
+          setProgressMap(progress.reduce((acc, p) => ({ ...acc, [p.module_id]: { xp: p.xp_earned || 0 } }), {}));
+          
+          if (activeModules) {
+            const enrichedSessions = progress.map(p => {
+               const mod = activeModules.find(m => m.id === p.module_id);
+               return { ...p, module: mod };
+            }).filter(s => s.module);
+            setPastSessions(enrichedSessions);
+          }
         }
       }
       setIsLoading(false);
@@ -264,15 +269,40 @@ export default function DashboardPage() {
              </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-               {learningPaths.map((path) => (
+               {learningPaths.map((path) => {
+                  const mods = path.curriculum_modules || [];
+                  const totalMods = mods.length;
+                  const completedMods = mods.filter((m: any) => m.status === 'complete').length;
+                  const pathProgress = totalMods > 0 ? Math.round((completedMods / totalMods) * 100) : 0;
+                  const totalXp = mods.reduce((sum: number, m: any) => {
+                     const modProgress = progressMap[m.id];
+                     return sum + (modProgress ? modProgress.xp : 0);
+                  }, 0);
+
+                  return (
                   <div key={path.id} className="bg-white border border-hairline p-6 rounded-2xl flex flex-col justify-between hover:border-primary/60 transition-all duration-200 group shadow-sm hover:shadow-md">
                      <div className="cursor-pointer mb-6" onClick={() => handleOpenCourse(path)}>
                         <h4 className="font-bold text-lg text-high mb-2 group-hover:text-primary transition-colors line-clamp-2">{path.skill_to_learn}</h4>
-                        <div className="flex items-center gap-2 text-xs text-muted font-medium">
+                        <div className="flex items-center gap-2 text-xs text-muted font-medium mb-4">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           Started {new Date(path.created_at).toLocaleDateString()}
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div className="w-full">
+                          <div className="flex justify-between text-[10px] font-bold text-muted mb-1 uppercase tracking-wider">
+                            <span>Progress</span>
+                            <span className={pathProgress === 100 ? "text-green-500" : "text-primary"}>{pathProgress}%</span>
+                          </div>
+                          <div className="h-1.5 w-full bg-surface rounded-full overflow-hidden mb-3">
+                            <div className={`h-full rounded-full transition-all duration-500 ${pathProgress === 100 ? 'bg-green-500' : 'bg-primary'}`} style={{ width: `${pathProgress}%` }}></div>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-high">
+                             <div className="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] uppercase">+{totalXp} XP</div>
+                             <span className="text-muted">Earned</span>
+                          </div>
                         </div>
                      </div>
                      <div className="flex items-center justify-between pt-4 border-t border-hairline">
@@ -280,7 +310,7 @@ export default function DashboardPage() {
                            onClick={() => handleOpenCourse(path)}
                            className="text-sm font-bold text-primary flex items-center gap-1 group-hover:gap-2 transition-all"
                         >
-                           Continue <span aria-hidden="true">&rarr;</span>
+                           {pathProgress === 100 ? "Review Path" : "Continue"} <span aria-hidden="true">&rarr;</span>
                         </button>
                         <button 
                            onClick={(e) => { e.stopPropagation(); setDeleteModalPath(path); setDeleteConfirmText(""); }}
@@ -293,7 +323,8 @@ export default function DashboardPage() {
                         </button>
                      </div>
                   </div>
-               ))}
+                  )
+               })}
             </div>
           )}
        </div>

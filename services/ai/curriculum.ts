@@ -1,4 +1,4 @@
-import { ai, MODEL_NAME, LearnerProfile, CurriculumModule } from "./client";
+import { ai, MODEL_NAME, LearnerProfile, CurriculumModule, generateWithRetry } from "./client";
 
 export async function generateCurriculum(profile: LearnerProfile): Promise<CurriculumModule[]> {
   let exactDays = 15;
@@ -43,7 +43,7 @@ You MUST return your response as a valid JSON object strictly matching this sche
 }
 `;
 
-  const response = await ai.chat.completions.create({
+  const response = await generateWithRetry({
     model: MODEL_NAME,
     messages: [{ role: "system", content: prompt }],
     temperature: 1,
