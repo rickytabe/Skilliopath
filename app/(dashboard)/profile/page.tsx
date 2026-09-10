@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { CountryWithFlag } from "@/utils/country";
+import { logout } from "@/app/(auth)/actions";
 
 interface ProfileData {
   id: string;
@@ -626,6 +627,16 @@ export default function ProfilePage() {
                 </div>
                 Dashboard
               </Link>
+              <form action={logout}>
+                <button className="w-full flex items-center gap-3 p-3 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 transition-all group">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  </div>
+                  Log out
+                </button>
+              </form>
             </div>
           </div>
         </div>

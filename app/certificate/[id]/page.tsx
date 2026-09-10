@@ -295,61 +295,60 @@ export default function CertificatePage() {
       </div>
 
       {/* Certificate */}
-      <div className="max-w-4xl mx-auto animate-fade-in-up">
+      <div className="max-w-4xl mx-auto w-full animate-fade-in-up px-2 sm:px-0 ">
         <div
           ref={certificateRef}
-          className="certificate-container relative bg-white rounded-2xl overflow-hidden animate-cert-glow animate-cert-float"
-          style={{ aspectRatio: "1.414 / 1" }}
+          className="certificate-container relative w-full bg-white rounded-2xl overflow-hidden animate-cert-glow animate-cert-float aspect-auto sm:aspect-[1.414/1]"
         >
           {/* Decorative Classic Border */}
-          <div className="absolute inset-0 p-3 sm:p-5">
-            <div className="absolute inset-3 sm:inset-5 border-[3px] border-[#C5A880] pointer-events-none" />
-            <div className="absolute inset-4 sm:inset-6 border border-[#C5A880] pointer-events-none" />
+          <div className="absolute inset-0 p-2 sm:p-5">
+            <div className="absolute inset-2 sm:inset-5 border-[2px] sm:border-[3px] border-[#C5A880] pointer-events-none" />
+            <div className="absolute inset-[11px] sm:inset-6 border border-[#C5A880] pointer-events-none" />
           </div>
 
           {/* Watermark Logo */}
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.09] pointer-events-none">
-            <img src="/logo.png" alt="Watermark" crossOrigin="anonymous" className="w-[60%] sm:w-[50%] object-contain grayscale" />
+            <img src="/logo.png" alt="Watermark" crossOrigin="anonymous" className="w-[50%] object-contain grayscale" />
           </div>
 
           {/* Content */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-between px-10 sm:px-20 pt-10 sm:pt-14 pb-16 sm:pb-20 text-center">
+          <div className="relative z-10 h-full flex flex-col items-center justify-between px-6 sm:px-20 pt-3 sm:pt-14 pb-5 sm:pb-20 text-center">
 
             {/* Top Logo */}
             <div className="flex flex-col items-center">
-              <img src="/logo.png" alt="SkillioPath Logo" crossOrigin="anonymous" className="h-12  sm:h-20 object-contain mb-4" />
-              <h3 className="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-[#1A233A] mb-6">
+              <img src="/logo.png" alt="SkillioPath Logo" crossOrigin="anonymous" className="h-10 sm:h-20 object-contain mb-1 sm:mb-4" />
+              <h3 className="text-[7px] sm:text-[11px] font-bold uppercase tracking-[0.2em] sm:tracking-[0.4em] text-[#1A233A] mb-1 sm:mb-6">
                 SkillioPath Digital Academy
               </h3>
             </div>
 
             {/* Title */}
-            <div className="flex flex-col items-center space-y-3 w-full">
-              <h1 className={`${playfair.className} text-3xl sm:text-4xl md:text-5xl font-bold text-[#1A233A] tracking-wide`}>
+            <div className="flex flex-col items-center space-y-1 sm:space-y-3 w-full">
+              <h1 className={`${playfair.className} text-xl sm:text-4xl md:text-5xl font-bold text-[#1A233A] tracking-wide leading-tight`}>
                 CERTIFICATE OF MASTERY
               </h1>
-              <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest mt-3">
+              <p className="text-[8px] sm:text-xs text-slate-500 uppercase tracking-widest mt-1 sm:mt-3">
                 This certifies that
               </p>
               
               {/* User Name */}
-              <h2 className={`${playfair.className} text-4xl sm:text-5xl md:text-6xl text-[#1A233A] mt-3 mb-1`}>
+              <h2 className={`${playfair.className} text-2xl sm:text-5xl md:text-6xl text-[#1A233A] mt-1 sm:mt-3 mb-1`}>
                 {data.userName}
               </h2>
 
               {/* Achievement Text */}
-              <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed mt-1">
+              <p className="text-[9px] sm:text-sm text-slate-600 max-w-[80%] sm:max-w-xl leading-snug sm:leading-relaxed mt-1">
                 has successfully completed the comprehensive curriculum and demonstrated proficiency in
               </p>
 
               {/* Skill Name */}
-              <h3 className={`${playfair.className} text-2xl sm:text-3xl text-[#C5A880] font-semibold mt-3 mb-6`}>
+              <h3 className={`${playfair.className} text-lg sm:text-3xl text-[#C5A880] font-semibold mt-1 sm:mt-3 mb-1 sm:mb-6`}>
                 {data.skillName}
               </h3>
             </div>
 
             {/* Bottom Section: Signature & Seal */}
-            <div className="w-full flex justify-between items-end mt-4 px-2 sm:px-6">
+            <div className="w-full flex justify-between items-end mt-2 sm:mt-4 px-2 sm:px-6">
               {/* Signature */}
               <div className="flex flex-col items-center w-36 sm:w-48">
                 <div className={`${greatVibes.className} text-3xl sm:text-5xl text-[#1A233A] mb-1 sm:mb-2`}>
