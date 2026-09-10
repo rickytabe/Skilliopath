@@ -18,7 +18,6 @@ function PathContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progressMap, setProgressMap] = useState<Record<string, { stars: number; xp: number }>>({});
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [loadingText, setLoadingText] = useState("Analyzing your skills...");
   
   const searchParams = useSearchParams();
 
@@ -68,11 +67,10 @@ function PathContent() {
     return () => clearInterval(interval);
   }, [isGenerating]);
 
-  useEffect(() => {
-    if (loadingProgress > 20 && loadingProgress <= 50) setLoadingText("Identifying skill gaps...");
-    else if (loadingProgress > 50 && loadingProgress <= 80) setLoadingText("Structuring daily modules...");
-    else if (loadingProgress > 80) setLoadingText("Finalizing personalized path...");
-  }, [loadingProgress]);
+  let loadingText = "Analyzing your skills...";
+  if (loadingProgress > 20 && loadingProgress <= 50) loadingText = "Identifying skill gaps...";
+  else if (loadingProgress > 50 && loadingProgress <= 80) loadingText = "Structuring daily modules...";
+  else if (loadingProgress > 80) loadingText = "Finalizing personalized path...";
 
   useEffect(() => {
     async function loadOrGenerate() {
@@ -346,7 +344,7 @@ function PathContent() {
     );
   }
 
-  let currentTimingLabel = "";
+
 
   let completedCount = 0;
   let totalStars = 0;
@@ -442,8 +440,7 @@ function PathContent() {
 
           <div className="space-y-12 sm:space-y-0 relative">
             {modules.map((mod, idx) => {
-              const showHeader = mod.timingLabel !== currentTimingLabel;
-              if (showHeader) currentTimingLabel = mod.timingLabel;
+              const showHeader = idx === 0 || mod.timingLabel !== modules[idx - 1].timingLabel;
 
               const isEven = idx % 2 === 0;
               const isCurrent = mod.status === "current";

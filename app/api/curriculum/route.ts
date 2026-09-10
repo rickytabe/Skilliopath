@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         skill_normalized: normalizedSkill,
         career_context: normalizedCareer,
         modules_json: curriculum
-      }).then(({ error }) => {
+      }).then(({ error }: { error: any }) => {
         if (error) console.error("Failed to update global curriculum cache:", error);
       });
     }

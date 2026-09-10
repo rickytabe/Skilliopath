@@ -228,6 +228,7 @@ export default function LessonPage() {
       const xpTable = [3, 5, 10, 15];
       const xp = xpTable[stars];
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsSavingStats(true);
 
       // Save to API

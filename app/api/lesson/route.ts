@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         module_title_normalized: normalizedTitle,
         career_context: normalizedCareer,
         content_json: lesson
-      }).then(({ error }) => {
+      }).then(({ error }: { error: any }) => {
         if (error) console.error("Failed to update global lesson cache:", error);
       });
     }

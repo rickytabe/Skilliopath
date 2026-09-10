@@ -31,7 +31,7 @@ export default function CertificatePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
-  const [hasCelebrated, setHasCelebrated] = useState(false);
+  const hasCelebrated = useRef(false);
 
   useEffect(() => {
     async function fetchCertificate() {
@@ -54,8 +54,8 @@ export default function CertificatePage() {
 
   // Celebration Effect
   useEffect(() => {
-    if (data && !isLoading && !error && !hasCelebrated) {
-      setHasCelebrated(true);
+    if (data && !isLoading && !error && !hasCelebrated.current) {
+      hasCelebrated.current = true;
       
       const playVictorySound = () => {
         try {
@@ -125,7 +125,7 @@ export default function CertificatePage() {
       playVictorySound();
       fireConfetti();
     }
-  }, [data, isLoading, error, hasCelebrated]);
+  }, [data, isLoading, error]);
 
   const handleDownloadPNG = async () => {
     if (!certificateRef.current) return;
