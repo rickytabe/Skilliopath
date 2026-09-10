@@ -312,7 +312,7 @@ export default function CertificatePage() {
           </div>
 
           {/* Content */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-between px-6 sm:px-20 pt-3 sm:pt-14 pb-5 sm:pb-20 text-center">
+          <div className="relative z-10 h-full flex flex-col items-center justify-between px-6 sm:px-20 pt-4 sm:pt-10 pb-5 sm:pb-12 text-center">
 
             {/* Top Logo */}
             <div className="flex flex-col items-center">
