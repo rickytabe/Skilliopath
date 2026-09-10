@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     const { data: dbModules, error } = await supabase
       .from('curriculum_modules')
       .insert(
-        curriculum.map((m, index) => {
+        curriculum.map((m: any, index: number) => {
           // Calculate strict timing sequence to avoid AI hallucinations
           const dayNum = index + 1;
           const weekNum = Math.ceil(dayNum / 5);

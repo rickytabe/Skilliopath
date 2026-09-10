@@ -4,6 +4,10 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Playfair_Display, Great_Vibes } from "next/font/google";
+
+const playfair = Playfair_Display({ subsets: ["latin"] });
+const greatVibes = Great_Vibes({ weight: "400", subsets: ["latin"] });
 
 interface CertificateData {
   certificateId: string;
@@ -141,11 +145,31 @@ export default function CertificatePage() {
     );
   }
 
-  const formattedDate = new Date(data.completionDate).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  let formattedDate = "";
+  try {
+    const rawDate = data.completionDate ? new Date(data.completionDate) : new Date();
+    // If date is invalid (NaN), fallback to today
+    const validDate = isNaN(rawDate.getTime()) ? new Date() : rawDate;
+    
+    formattedDate = validDate.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch (e) {
+    // Ultimate fallback if parsing fails completely
+    formattedDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
+  
+  // Just in case it's still completely empty, hardcode a fallback
+  if (!formattedDate || formattedDate.trim() === "") {
+    const today = new Date();
+    formattedDate = `${today.toLocaleString('en-US', { month: 'long' })} ${today.getDate()}, ${today.getFullYear()}`;
+  }
 
   return (
     <main className="min-h-screen bg-background py-10 px-4 sm:px-6">
@@ -201,109 +225,86 @@ export default function CertificatePage() {
           className="certificate-container relative bg-white rounded-2xl overflow-hidden shadow-2xl"
           style={{ aspectRatio: "1.414 / 1" }}
         >
-          {/* Decorative Gold Border */}
+          {/* Decorative Classic Border */}
           <div className="absolute inset-0 p-3 sm:p-5">
-            <div className="absolute inset-3 sm:inset-5 border-2 border-primary/30 rounded-xl pointer-events-none" />
-            <div className="absolute inset-5 sm:inset-8 border border-primary/15 rounded-lg pointer-events-none" />
+            <div className="absolute inset-3 sm:inset-5 border-[3px] border-[#C5A880] pointer-events-none" />
+            <div className="absolute inset-4 sm:inset-6 border border-[#C5A880] pointer-events-none" />
           </div>
 
-          {/* Corner Ornaments */}
-          <div className="absolute top-4 left-4 sm:top-6 sm:left-6 w-8 h-8 sm:w-12 sm:h-12 border-t-2 border-l-2 border-primary/40 rounded-tl-lg" />
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 w-8 h-8 sm:w-12 sm:h-12 border-t-2 border-r-2 border-primary/40 rounded-tr-lg" />
-          <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 w-8 h-8 sm:w-12 sm:h-12 border-b-2 border-l-2 border-primary/40 rounded-bl-lg" />
-          <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 w-8 h-8 sm:w-12 sm:h-12 border-b-2 border-r-2 border-primary/40 rounded-br-lg" />
-
-          {/* Watermark Pattern */}
-          <div className="absolute inset-0 opacity-[0.02]" style={{
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 40px, #F2A93B 40px, #F2A93B 41px)`,
-          }} />
+          {/* Watermark Logo */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+            <img src="/logo.png" alt="Watermark" crossOrigin="anonymous" className="w-[60%] sm:w-[50%] object-contain grayscale" />
+          </div>
 
           {/* Content */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 sm:px-16 py-8 sm:py-12 text-center">
+          <div className="relative z-10 h-full flex flex-col items-center justify-between px-10 sm:px-20 pt-10 sm:pt-14 pb-16 sm:pb-20 text-center">
 
-            {/* Top Branding */}
-            <div className="mb-4 sm:mb-6">
-              <h3 className="text-xs sm:text-sm font-bold uppercase tracking-[0.35em] text-primary/70 mb-1">SkillioPath</h3>
-              <p className="text-[10px] sm:text-xs text-muted tracking-widest uppercase">AI-Powered Digital Skills Academy</p>
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 w-full max-w-sm sm:max-w-md">
-              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-primary/30" />
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-primary/30 to-primary/30" />
+            {/* Top Logo */}
+            <div className="flex flex-col items-center">
+              <img src="/logo.png" alt="SkillioPath Logo" crossOrigin="anonymous" className="h-16 sm:h-20 object-contain mb-4" />
+              <h3 className="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-[#1A233A] mb-6">
+                SkillioPath Digital Academy
+              </h3>
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-display font-bold text-high mb-2 sm:mb-3 tracking-tight">
-              Certificate of Mastery
-            </h1>
-            <p className="text-xs sm:text-sm text-muted mb-4 sm:mb-8 font-medium">This certifies that</p>
+            <div className="flex flex-col items-center space-y-3 w-full">
+              <h1 className={`${playfair.className} text-3xl sm:text-4xl md:text-5xl font-bold text-[#1A233A] tracking-wide`}>
+                CERTIFICATE OF MASTERY
+              </h1>
+              <p className="text-[10px] sm:text-xs text-slate-500 uppercase tracking-widest mt-3">
+                This certifies that
+              </p>
+              
+              {/* User Name */}
+              <h2 className={`${playfair.className} text-4xl sm:text-5xl md:text-6xl text-[#1A233A] mt-3 mb-1`}>
+                {data.userName}
+              </h2>
 
-            {/* User Name */}
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-display font-bold text-primary mb-3 sm:mb-4" style={{
-              textShadow: "0 2px 20px rgba(242,169,59,0.15)",
-            }}>
-              {data.userName}
-            </h2>
+              {/* Achievement Text */}
+              <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed mt-1">
+                has successfully completed the comprehensive curriculum and demonstrated proficiency in
+              </p>
 
-            {/* Achievement Text */}
-            <p className="text-sm sm:text-lg text-mid font-medium mb-4 sm:mb-6 max-w-sm sm:max-w-xl leading-relaxed">
-              has successfully completed all <strong className="text-high">{data.totalModules} modules</strong> and demonstrated proficiency in
-            </p>
-
-            {/* Skill Name */}
-            <div className="bg-primary/5 border border-primary/20 rounded-2xl px-6 sm:px-10 py-3 sm:py-4 mb-6 sm:mb-8 inline-block">
-              <h3 className="text-xl sm:text-3xl font-display font-bold text-high">{data.skillName}</h3>
+              {/* Skill Name */}
+              <h3 className={`${playfair.className} text-2xl sm:text-3xl text-[#C5A880] font-semibold mt-3 mb-6`}>
+                {data.skillName}
+              </h3>
             </div>
 
-            {/* Stats Row */}
-            <div className="flex items-center justify-center gap-4 sm:gap-8 mb-6 sm:mb-8">
-              <div className="text-center">
-                <p className="text-lg sm:text-2xl font-display font-bold text-high">{data.totalXp}</p>
-                <p className="text-[10px] sm:text-xs text-muted uppercase tracking-wider font-bold">XP Earned</p>
-              </div>
-              <div className="w-px h-6 sm:h-8 bg-hairline" />
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-0.5">
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="text-lg sm:text-2xl font-display font-bold text-high">{data.avgStars}</span>
+            {/* Bottom Section: Signature & Seal */}
+            <div className="w-full flex justify-between items-end mt-4 px-2 sm:px-6">
+              {/* Signature */}
+              <div className="flex flex-col items-center w-36 sm:w-48">
+                <div className={`${greatVibes.className} text-3xl sm:text-5xl text-[#1A233A] mb-1 sm:mb-2`}>
+                  Tabe
                 </div>
-                <p className="text-[10px] sm:text-xs text-muted uppercase tracking-wider font-bold">Avg Stars</p>
+                <div className="w-full h-px bg-slate-300 mb-2" />
+                <p className="text-[8px] sm:text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                  Tabe Rickson, Founder
+                </p>
               </div>
-              <div className="w-px h-6 sm:h-8 bg-hairline" />
-              <div className="text-center">
-                <p className="text-lg sm:text-2xl font-display font-bold text-high">{data.totalModules}</p>
-                <p className="text-[10px] sm:text-xs text-muted uppercase tracking-wider font-bold">Modules</p>
+
+              {/* Minimal Seal/Stats */}
+              <div className="flex flex-col items-center">
+                <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-full border border-[#C5A880] flex flex-col items-center justify-center bg-[#F9F7F3] shadow-inner">
+                  <p className="text-[10px] sm:text-sm font-bold text-[#1A233A]">{data.totalXp} XP</p>
+                  <p className="text-[7px] sm:text-[9px] uppercase tracking-widest text-slate-500">{data.totalModules} Mods</p>
+                </div>
+              </div>
+
+              {/* Date & ID */}
+              <div className="flex flex-col items-center w-36 sm:w-48">
+                <p className={`${playfair.className} sm:text-xl text-[#1A233A] font-bold mb-1 sm:mb-2`}>
+                  {formattedDate}
+                </p>
+                <div className="w-full h-px bg-slate-300 mb-2" />
+                <p className="text-[8px] sm:text-[10px] text-[#1A233A] uppercase tracking-wider font-bold">
+                  Date Issued &bull; SP-{data.certificateId}
+                </p>
               </div>
             </div>
 
-            {/* Date & Certificate ID */}
-            <div className="flex items-center justify-center gap-6 sm:gap-10 text-[10px] sm:text-xs text-muted">
-              <div>
-                <p className="font-bold uppercase tracking-wider mb-1">Date Issued</p>
-                <p className="text-high font-medium">{formattedDate}</p>
-              </div>
-              <div className="w-px h-6 bg-hairline" />
-              <div>
-                <p className="font-bold uppercase tracking-wider mb-1">Certificate ID</p>
-                <p className="text-high font-mono font-medium">SP-{data.certificateId}</p>
-              </div>
-            </div>
-
-            {/* Seal */}
-            <div className="absolute bottom-4 right-6 sm:bottom-8 sm:right-12 flex flex-col items-center opacity-60">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-primary/40 flex items-center justify-center bg-primary/5">
-                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-primary/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-              </div>
-              <p className="text-[8px] sm:text-[10px] uppercase tracking-widest font-bold text-primary/40 mt-1">Verified</p>
-            </div>
           </div>
         </div>
       </div>
