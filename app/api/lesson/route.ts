@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const normalizedTitle = module.title.trim().toLowerCase();
     const normalizedCareer = profile.currentCareer.trim().toLowerCase();
 
-    const { data: cachedLesson } = await supabase
+    const { data: cachedLesson } = await (supabase as any)
       .from('global_lessons')
       .select('content_json')
       .eq('module_title_normalized', normalizedTitle)
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
       // 3. If not found or incomplete, generate it via AI
       lesson = await generateLesson(module, profile);
 
-      // Save to global cache in background
-      supabase.from('global_lessons').insert({
+      // Save to global cache in background (don't await to avoid blocking)
+      (supabase as any).from('global_lessons').insert({
         module_title_normalized: normalizedTitle,
         career_context: normalizedCareer,
         content_json: lesson

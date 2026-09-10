@@ -31,6 +31,7 @@ export default function CertificatePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [hasCelebrated, setHasCelebrated] = useState(false);
 
   useEffect(() => {
     async function fetchCertificate() {
@@ -50,6 +51,81 @@ export default function CertificatePage() {
     }
     fetchCertificate();
   }, [pathId]);
+
+  // Celebration Effect
+  useEffect(() => {
+    if (data && !isLoading && !error && !hasCelebrated) {
+      setHasCelebrated(true);
+      
+      const playVictorySound = () => {
+        try {
+          const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+          if (!AudioContext) return;
+          const ctx = new AudioContext();
+
+          const playNote = (freq: number, startTime: number, duration: number) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+            
+            gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+            gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + startTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.start(ctx.currentTime + startTime);
+            osc.stop(ctx.currentTime + startTime + duration);
+          };
+
+          // Sparkle / Win arpeggio (C5, E5, G5, C6)
+          playNote(523.25, 0.0, 0.3);
+          playNote(659.25, 0.1, 0.3);
+          playNote(783.99, 0.2, 0.3);
+          playNote(1046.50, 0.3, 0.8);
+        } catch (e) {
+          console.error("Audio API not supported or blocked", e);
+        }
+      };
+
+      const fireConfetti = async () => {
+        try {
+          const confetti = (await import("canvas-confetti")).default;
+          const duration = 3000;
+          const end = Date.now() + duration;
+
+          const frame = () => {
+            confetti({
+              particleCount: 5,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 },
+              colors: ['#C5A880', '#1A233A', '#F9F7F3', '#F2A93B']
+            });
+            confetti({
+              particleCount: 5,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 },
+              colors: ['#C5A880', '#1A233A', '#F9F7F3', '#F2A93B']
+            });
+
+            if (Date.now() < end) {
+              requestAnimationFrame(frame);
+            }
+          };
+          frame();
+        } catch (e) {
+          console.error("Failed to load confetti", e);
+        }
+      };
+
+      playVictorySound();
+      fireConfetti();
+    }
+  }, [data, isLoading, error, hasCelebrated]);
 
   const handleDownloadPNG = async () => {
     if (!certificateRef.current) return;
@@ -222,7 +298,7 @@ export default function CertificatePage() {
       <div className="max-w-4xl mx-auto animate-fade-in-up">
         <div
           ref={certificateRef}
-          className="certificate-container relative bg-white rounded-2xl overflow-hidden shadow-2xl"
+          className="certificate-container relative bg-white rounded-2xl overflow-hidden animate-cert-glow animate-cert-float"
           style={{ aspectRatio: "1.414 / 1" }}
         >
           {/* Decorative Classic Border */}
@@ -232,7 +308,7 @@ export default function CertificatePage() {
           </div>
 
           {/* Watermark Logo */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.09] pointer-events-none">
             <img src="/logo.png" alt="Watermark" crossOrigin="anonymous" className="w-[60%] sm:w-[50%] object-contain grayscale" />
           </div>
 
@@ -241,7 +317,7 @@ export default function CertificatePage() {
 
             {/* Top Logo */}
             <div className="flex flex-col items-center">
-              <img src="/logo.png" alt="SkillioPath Logo" crossOrigin="anonymous" className="h-16 sm:h-20 object-contain mb-4" />
+              <img src="/logo.png" alt="SkillioPath Logo" crossOrigin="anonymous" className="h-12  sm:h-20 object-contain mb-4" />
               <h3 className="text-[9px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-[#1A233A] mb-6">
                 SkillioPath Digital Academy
               </h3>

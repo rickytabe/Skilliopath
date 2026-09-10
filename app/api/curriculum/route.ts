@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     const normalizedSkill = profile.skillToLearn.trim().toLowerCase();
     const normalizedCareer = profile.currentCareer.trim().toLowerCase();
 
-    const { data: cachedCurriculum } = await supabase
+    const { data: cachedCurriculum } = await (supabase as any)
       .from('global_curriculums')
       .select('modules_json')
       .eq('skill_normalized', normalizedSkill)
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
       curriculum = await generateCurriculum(profile);
 
       // Save to global cache in background (don't await to avoid blocking)
-      supabase.from('global_curriculums').insert({
+      (supabase as any).from('global_curriculums').insert({
         skill_normalized: normalizedSkill,
         career_context: normalizedCareer,
         modules_json: curriculum
