@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { LearnerProfile, CurriculumModule, LessonContent } from "@/services/ai/client";
 import { playCorrectSound, playIncorrectSound, playCelebrationSound } from "@/utils/sounds";
 import { createClient } from "@/utils/supabase/client";
-
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 export default function LessonPage() {
   const router = useRouter();
   const params = useParams();
@@ -223,8 +224,9 @@ export default function LessonPage() {
       else if (percentage >= 0.7) stars = 2;
       else if (percentage >= 0.4) stars = 1;
 
-      const flawlessBonus = percentage === 1 ? 5 : 0;
-      const xp = 10 + flawlessBonus;
+      // XP reward scale: 0★=3, 1★=5, 2★=10, 3★=15
+      const xpTable = [3, 5, 10, 15];
+      const xp = xpTable[stars];
 
       setIsSavingStats(true);
 
@@ -413,8 +415,10 @@ export default function LessonPage() {
                     )}
                   </button>
                 </div>
-                <div className="prose prose-invert prose-p:text-mid prose-p:leading-relaxed prose-p:text-lg max-w-none">
-                  <p>{lessonContent.explanation}</p>
+                <div className="prose prose-slate max-w-none prose-p:text-high prose-p:leading-relaxed prose-p:text-lg prose-headings:text-high prose-strong:text-high prose-strong:font-bold prose-li:text-high">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {lessonContent.explanation.replace(/\s*[—–]\s*/g, ', ')}
+                  </ReactMarkdown>
                 </div>
               </section>
 
@@ -534,13 +538,9 @@ export default function LessonPage() {
             <p className="text-sm text-muted mb-8 relative z-10">You've mastered this concept.</p>
             
             {isSavingStats ? (
-              <div className="flex flex-col items-center justify-center py-2 animate-fade-in">
-                <div className="flex justify-center gap-2 mb-6">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full bg-surface-light animate-pulse opacity-50" />
-                  ))}
-                </div>
-                <div className="bg-surface-light/50 border border-hairline rounded-xl w-32 h-[72px] animate-pulse mb-8" />
+              <div className="flex flex-col items-center justify-center py-6 animate-fade-in">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
+                <p className="text-sm font-bold text-muted">Calculating results...</p>
               </div>
             ) : (
               <>

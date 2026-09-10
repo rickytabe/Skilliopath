@@ -33,8 +33,37 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. If not found or incomplete, generate it via AI
-    const lesson = await generateLesson(module, profile);
+    // 2. GLOBAL CACHE CHECK
+    const normalizedTitle = module.title.trim().toLowerCase();
+    const normalizedCareer = profile.currentCareer.trim().toLowerCase();
+
+    const { data: cachedLesson } = await supabase
+      .from('global_lessons')
+      .select('content_json')
+      .eq('module_title_normalized', normalizedTitle)
+      .eq('career_context', normalizedCareer)
+      .maybeSingle();
+
+    let lesson;
+    if (cachedLesson && cachedLesson.content_json) {
+      lesson = cachedLesson.content_json;
+      // Ensure moduleId is set correctly for this specific user's module
+      lesson.moduleId = module.id;
+      console.log(`[CACHE HIT] Lesson found for: ${normalizedTitle} | ${normalizedCareer}`);
+    } else {
+      console.log(`[CACHE MISS] Generating lesson for: ${normalizedTitle} | ${normalizedCareer}`);
+      // 3. If not found or incomplete, generate it via AI
+      lesson = await generateLesson(module, profile);
+
+      // Save to global cache in background
+      supabase.from('global_lessons').insert({
+        module_title_normalized: normalizedTitle,
+        career_context: normalizedCareer,
+        content_json: lesson
+      }).then(({ error }) => {
+        if (error) console.error("Failed to update global lesson cache:", error);
+      });
+    }
 
     const { error } = await supabase
       .from('curriculum_modules')

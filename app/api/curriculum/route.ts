@@ -34,7 +34,34 @@ export async function POST(req: Request) {
       return NextResponse.json(dbCurriculum);
     }
 
-    const curriculum = await generateCurriculum(profile);
+    // --- GLOBAL CACHE CHECK ---
+    const normalizedSkill = profile.skillToLearn.trim().toLowerCase();
+    const normalizedCareer = profile.currentCareer.trim().toLowerCase();
+
+    const { data: cachedCurriculum } = await supabase
+      .from('global_curriculums')
+      .select('modules_json')
+      .eq('skill_normalized', normalizedSkill)
+      .eq('career_context', normalizedCareer)
+      .maybeSingle();
+
+    let curriculum;
+    if (cachedCurriculum && cachedCurriculum.modules_json) {
+      curriculum = cachedCurriculum.modules_json;
+      console.log(`[CACHE HIT] Curriculum found for: ${normalizedSkill} | ${normalizedCareer}`);
+    } else {
+      console.log(`[CACHE MISS] Generating curriculum for: ${normalizedSkill} | ${normalizedCareer}`);
+      curriculum = await generateCurriculum(profile);
+
+      // Save to global cache in background (don't await to avoid blocking)
+      supabase.from('global_curriculums').insert({
+        skill_normalized: normalizedSkill,
+        career_context: normalizedCareer,
+        modules_json: curriculum
+      }).then(({ error }) => {
+        if (error) console.error("Failed to update global curriculum cache:", error);
+      });
+    }
 
     const { data: dbModules, error } = await supabase
       .from('curriculum_modules')

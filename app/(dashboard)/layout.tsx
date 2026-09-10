@@ -67,7 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }
         }
         
-        setProfile({ ...profileData, avatar_url: user.user_metadata?.avatar_url || null } as UserProfile);
+        setProfile({ ...profileData, avatar_url: profileData.avatar_url || user.user_metadata?.avatar_url || null } as UserProfile);
         setLiveStats({ totalXp: profileData.total_xp || 0, currentLevel: profileData.current_level || 1 });
       } else {
         // Automatically create a profile for OAuth users

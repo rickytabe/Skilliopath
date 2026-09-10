@@ -39,6 +39,16 @@ export default function DashboardPage() {
       setProfile(profileData as any);
       setLiveStats({ totalXp: userProfile?.total_xp || 0, currentLevel: userProfile?.current_level || 1 });
 
+      // Fetch ALL user progress first (needed for XP on all path cards)
+      const { data: progress } = await supabase.from('user_progress').select('module_id, xp_earned, stars_earned').eq('profile_id', user.id);
+      const progressData: Record<string, { xp: number }> = {};
+      if (progress) {
+        progress.forEach(p => {
+          progressData[p.module_id] = { xp: p.xp_earned || 0 };
+        });
+      }
+      setProgressMap(progressData);
+
       const { data: paths } = await supabase.from('learning_paths').select('*, curriculum_modules(id, status)').eq('profile_id', user.id).order('created_at', { ascending: false });
       
       if (paths && paths.length > 0) {
@@ -48,13 +58,8 @@ export default function DashboardPage() {
         const { data: activeModules } = await supabase.from('curriculum_modules').select('*').eq('path_id', activePathId).order('order_index', { ascending: true });
         if (activeModules) {
           setModules(activeModules as any);
-        }
 
-        const { data: progress } = await supabase.from('user_progress').select('*').eq('profile_id', user.id).order('created_at', { ascending: false });
-        if (progress) {
-          setProgressMap(progress.reduce((acc, p) => ({ ...acc, [p.module_id]: { xp: p.xp_earned || 0 } }), {}));
-          
-          if (activeModules) {
+          if (progress) {
             const enrichedSessions = progress.map(p => {
                const mod = activeModules.find(m => m.id === p.module_id);
                return { ...p, module: mod };

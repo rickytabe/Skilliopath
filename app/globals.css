@@ -1,5 +1,5 @@
 @import "tailwindcss";
-
+@plugin "@tailwindcss/typography";
 /* ─── Design Tokens — Light, clean, professional ────────── */
 :root {
   /* Backgrounds — warm white/cream tones */
